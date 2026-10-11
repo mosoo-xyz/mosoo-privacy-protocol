@@ -154,6 +154,24 @@ Supported by the **Abey Foundation Grant Program**, Mosoo will advance across th
 
 ---
 
+## 👥 Core Team
+
+| Name | Role | Focus Areas |
+| :--- | :--- | :--- |
+| **Omkar Chavan** | Founder & Lead Protocol Architect | Smart Contracts, ZK Circuits (Circom/SnarkJS), Cryptographic Primitives, AbeyChain Integration |
+| **Sourabh Kumbhar** | Core Technical Engineer | Relayer Systems, Backend Concurrency, Docker Node DevOps, Automated Testing Pipelines |
+| **Indrajeet Yadav** | UI/UX Designer & Frontend Tech Lead | Design System, Web3 Terminal UX, Mobile Responsive Architecture, Brand Identity |
+
+---
+
+## 📬 Contact & Inquiries
+
+- **Official Inquiries:** [contact@mosoo.xyz](mailto:contact@mosoo.xyz)
+- **Website:** [https://mosoo.xyz](https://mosoo.xyz)
+- **GitHub:** [https://github.com/mosoo-xyz/mosoo-privacy-protocol](https://github.com/mosoo-xyz/mosoo-privacy-protocol)
+
+---
+
 ## 📄 License
 
 This project is licensed under the [MIT License](LICENSE).
