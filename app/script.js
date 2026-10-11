@@ -146,7 +146,7 @@ async function connectWeb3Wallet(promptSignature = true) {
     if (cachedSession && !promptSignature) {
       userKeys = JSON.parse(cachedSession);
     } else {
-      const message = `Welcome to Mosoo Privacy Protocol on Abey Chain!\n\nSign this message to securely derive your Zero-Knowledge private keys and 0msk shielded address.\n\nAccount: ${currentAccount}\nChain ID: 178\nNonce: mosoo-auth-v1`;
+      const message = `Welcome to Mosoo Privacy Protocol on Abey Chain!\n\nSign this message to securely derive your Zero-Knowledge private keys and Shielded Address.\n\nAccount: ${currentAccount}\nChain ID: 178\nNonce: mosoo-auth-v1`;
       try {
         const signature = await signer.signMessage(message);
         if (typeof MosooCrypto !== 'undefined' && MosooCrypto.deriveKeysFromSignature) {
