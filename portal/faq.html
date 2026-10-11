@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Frequently Asked Questions — Mosoo Privacy Protocol</title>
+  <meta name="description" content="Clear, honest answers about Mosoo's zero-knowledge privacy architecture, compliance viewing keys, relayer economics, and operational best practices.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-dark">
+  <canvas id="zk-canvas"></canvas>
+  <div id="cursor-glow" class="cursor-glow"></div>
+
+  <!-- Command Palette Modal -->
+  <div id="cmd-palette-backdrop" class="cmd-backdrop">
+    <div class="cmd-box">
+      <div class="cmd-input-wrap">
+        <span class="cmd-search-icon">🔍</span>
+        <input type="text" id="cmd-input" placeholder="Type a command or jump to... (e.g. Shield, Cloak, Tree, Prover, Explorer)" autocomplete="off">
+        <span class="cmd-esc-tag">ESC</span>
+      </div>
+      <div class="cmd-results" id="cmd-results">
+        <div class="cmd-item" data-action="dapp"><span class="cmd-icon">⚡</span> Launch Privacy Cockpit (DApp)</div>
+        <div class="cmd-item" data-action="how-it-works"><span class="cmd-icon">📖</span> How It Works (Architecture Guide)</div>
+        <div class="cmd-item" data-action="ecosystem"><span class="cmd-icon">🌐</span> Ecosystem & Real Use Cases</div>
+        <div class="cmd-item" data-action="security"><span class="cmd-icon">🔒</span> Security Architecture & Audits</div>
+        <div class="cmd-item" data-action="faq"><span class="cmd-icon">❓</span> Frequently Asked Questions</div>
+        <div class="cmd-item" data-action="cloak"><span class="cmd-icon">🛡️</span> Test Anonymity Cloak Simulator</div>
+        <div class="cmd-item" data-action="tree"><span class="cmd-icon">🌿</span> Explore Poseidon Merkle Tree</div>
+        <div class="cmd-item" data-action="demo"><span class="cmd-icon">🌀</span> Run Client-Side Groth16 Prover</div>
+        <div class="cmd-item" data-action="explorer"><span class="cmd-icon">🔍</span> MosooScan ZK Explorer</div>
+        <div class="cmd-item" data-action="theme"><span class="cmd-icon">🌓</span> Toggle Night / Day Mode</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Navigation Drawer -->
+  <div id="mobile-nav-drawer" class="mobile-nav-drawer">
+    <div class="m-nav-header">
+      <div class="brand-titles">
+        <span class="brand-title">MOSOO</span>
+        <span class="brand-tag">MENU</span>
+      </div>
+      <button id="btn-close-mobile-nav" class="btn-mobile-nav" style="display:flex;">✕</button>
+    </div>
+    <div class="m-nav-links">
+      <a href="index.html" class="m-nav-link"><span>🏛️ Protocol Overview</span> <span>→</span></a>
+      <a href="how-it-works.html" class="m-nav-link"><span>📖 How It Works</span> <span>→</span></a>
+      <a href="ecosystem.html" class="m-nav-link"><span>🌐 Ecosystem & Use Cases</span> <span>→</span></a>
+      <a href="security.html" class="m-nav-link"><span>🔒 Security Architecture</span> <span>→</span></a>
+      <a href="faq.html" class="m-nav-link active"><span>❓ Frequently Asked Questions</span> <span>→</span></a>
+      <a href="https://explorer.mosoo.xyz" target="_blank" class="m-nav-link"><span>🔍 MosooScan Explorer</span> <span>↗</span></a>
+    </div>
+    <div class="m-nav-footer">
+      <a href="https://app.mosoo.xyz" target="_blank" class="btn-primary-action" style="width:100%; justify-content:center;">
+        <span>Launch Privacy Cockpit</span>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M6 3L11 8L6 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <!-- Main Navbar -->
+  <header class="header">
+    <div class="nav-shell">
+      <a href="index.html" class="brand-group">
+        <div class="logo-orb">
+          <img src="assets/logo.png" alt="Mosoo" class="brand-logo-img">
+        </div>
+        <div class="brand-titles">
+          <span class="brand-title">MOSOO</span>
+          <span class="brand-tag">PROTOCOL</span>
+        </div>
+      </a>
+
+      <nav class="nav-links">
+        <a href="index.html" class="nav-item">Overview</a>
+        <a href="how-it-works.html" class="nav-item">How It Works</a>
+        <a href="ecosystem.html" class="nav-item">Ecosystem</a>
+        <a href="security.html" class="nav-item">Security</a>
+        <a href="faq.html" class="nav-item active">FAQ</a>
+        <a href="https://explorer.mosoo.xyz" target="_blank" class="nav-item">MosooScan <span class="tag-live">LIVE</span></a>
+      </nav>
+
+      <div class="nav-controls">
+        <button id="btn-cmd" class="btn-cmd-trigger" title="Command Palette (Ctrl+K)">
+          <span>⌘K</span>
+        </button>
+        <button id="theme-toggle" class="btn-control" title="Switch Day/Night Mode">
+          <span class="icon-sun">☀️</span>
+          <span class="icon-moon">🌙</span>
+        </button>
+        <button id="btn-mobile-nav" class="btn-mobile-nav" aria-label="Toggle Navigation">
+          <span>☰</span>
+        </button>
+        <a href="https://app.mosoo.xyz" target="_blank" class="btn-launch-terminal">
+          <span class="pulse-beacon"></span>
+          <span>Launch Cockpit</span>
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M3 13L13 3M13 3H5M13 3V11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Subpage Hero -->
+  <section class="subpage-hero">
+    <div class="subpage-breadcrumb">
+      <a href="index.html">Protocol</a>
+      <span>/</span>
+      <span>Documentation</span>
+      <span>/</span>
+      <span style="color:var(--green-primary);">Frequently Asked Questions</span>
+    </div>
+
+    <h1 class="subpage-title">
+      Clear Answers, <br>
+      <span class="gradient-text">Zero Industry Buzzwords.</span>
+    </h1>
+
+    <p class="subpage-subtitle">
+      Everything you need to know about how Mosoo protects your financial identity, how relayers work, compliance viewing keys, and best practices for operational privacy.
+    </p>
+  </section>
+
+  <!-- Subpage Body Content -->
+  <main class="subpage-body">
+
+    <div class="faq-stack">
+
+      <!-- Question 1 -->
+      <div class="faq-card open">
+        <h3 class="faq-q">
+          <span>How does Mosoo differ from Tornado Cash?</span>
+          <div class="faq-q-right">
+            <span style="color:var(--green-primary); font-size: 13px;" class="mono">01</span>
+            <span class="faq-toggle-icon">+</span>
+          </div>
+        </h3>
+        <p class="faq-a">
+          <strong>Tornado Cash</strong> was a fixed-denomination coin tumbler (e.g. exactly 0.1, 1, 10, or 100 ETH). You could only deposit a fixed denomination and withdraw that exact same amount. It had zero private-to-private transfers, no ability to make change, and no viewing keys for compliance audits.
+          <br><br>
+          <strong>Mosoo</strong> is an arbitrary-amount Multi-UTXO privacy engine (architecturally closer to Zcash and Railgun). You can deposit arbitrary amounts (e.g., 23.45 ABEY), execute confidential peer-to-peer transfers inside the pool, receive change notes, and generate read-only Viewing Keys to share with tax authorities or auditors without sacrificing your public privacy.
+        </p>
+      </div>
+
+      <!-- Question 2 -->
+      <div class="faq-card open">
+        <h3 class="faq-q">
+          <span>Is using zero-knowledge privacy legal?</span>
+          <div class="faq-q-right">
+            <span style="color:var(--green-primary); font-size: 13px;" class="mono">02</span>
+            <span class="faq-toggle-icon">+</span>
+          </div>
+        </h3>
+        <p class="faq-a">
+          <strong>Yes.</strong> Privacy is a fundamental civil right and an absolute requirement for everyday business commerce. In the real world, no corporation publishes its employees' payroll or supplier agreements on a public billboard, and no individual wants their bank account balance visible to merchants every time they buy a coffee.
+          <br><br>
+          Furthermore, Mosoo includes <strong>Stealth Viewing Keys</strong>: if a lawful user needs to prove their source of funds or income to a tax agency or court, they can export a cryptographically provable read-only audit record without exposing their transactions to the public internet.
+        </p>
+      </div>
+
+      <!-- Question 3 -->
+      <div class="faq-card">
+        <h3 class="faq-q">
+          <span>Do I need gas in my withdrawal wallet to unshield?</span>
+          <div class="faq-q-right">
+            <span style="color:var(--green-primary); font-size: 13px;" class="mono">03</span>
+            <span class="faq-toggle-icon">+</span>
+          </div>
+        </h3>
+        <p class="faq-a">
+          <strong>No, you do not.</strong> This is one of Mosoo's most critical privacy safeguards.
+          <br><br>
+          In traditional setups, funding a brand-new wallet with gas from an old exchange or wallet immediately links the two addresses on-chain. Mosoo uses an independent Relayer network: the relayer submits the transaction and pays the on-chain gas fee. In exchange, the smart contract deducts a small fee from the note itself. Your fresh wallet receives clean ABEY starting from a 0.00 gas balance.
+        </p>
+      </div>
+
+      <!-- Question 4 -->
+      <div class="faq-card">
+        <h3 class="faq-q">
+          <span>Can a relayer steal my funds or modify the withdrawal address?</span>
+          <div class="faq-q-right">
+            <span style="color:var(--green-primary); font-size: 13px;" class="mono">04</span>
+            <span class="faq-toggle-icon">+</span>
+          </div>
+        </h3>
+        <p class="faq-a">
+          <strong>No, mathematically impossible.</strong> When your browser prepares a withdrawal, the destination address, amount, and fee are bound into the zero-knowledge proof or cryptographic authorizer signature.
+          <br><br>
+          If a malicious relayer attempts to alter even a single byte of the recipient address, the smart contract's <code>verifyProof</code> call evaluates to false and the transaction reverts immediately. Relayers only have the power to submit the transaction as constructed by you.
+        </p>
+      </div>
+
+      <!-- Question 5 -->
+      <div class="faq-card">
+        <h3 class="faq-q">
+          <span>How fast are zero-knowledge proofs generated in the browser?</span>
+          <div class="faq-q-right">
+            <span style="color:var(--green-primary); font-size: 13px;" class="mono">05</span>
+            <span class="faq-toggle-icon">+</span>
+          </div>
+        </h3>
+        <p class="faq-a">
+          Thanks to the ZK-friendly <strong>Poseidon hash function</strong>, our circuits require fewer than 20,000 R1CS constraints. 
+          Generating a Groth16 witness and proof in your browser typically takes <strong>1.5 to 3.5 seconds</strong> on a modern laptop, and <strong>3 to 5 seconds</strong> on a modern smartphone, running entirely in client-side WebAssembly without sending sensitive data anywhere.
+        </p>
+      </div>
+
+      <!-- Question 6 -->
+      <div class="faq-card">
+        <h3 class="faq-q">
+          <span>What happens if I lose my secret viewing key or browser storage?</span>
+          <div class="faq-q-right">
+            <span style="color:var(--green-primary); font-size: 13px;" class="mono">06</span>
+            <span class="faq-toggle-icon">+</span>
+          </div>
+        </h3>
+        <p class="faq-a">
+          Zero-knowledge cryptography is mathematically absolute: <strong>there is no password reset and no administrator backdoor</strong>. 
+          Your notes and keys are encrypted locally in your browser's SecureVault. You must back up your Viewing Key and note secrets. If you clear your browser cookies and storage without backing up your key, the funds cannot be recovered by anyone.
+        </p>
+      </div>
+
+      <!-- Question 7 -->
+      <div class="faq-card">
+        <h3 class="faq-q">
+          <span>What are the best practices for maximizing my privacy?</span>
+          <div class="faq-q-right">
+            <span style="color:var(--green-primary); font-size: 13px;" class="mono">07</span>
+            <span class="faq-toggle-icon">+</span>
+          </div>
+        </h3>
+        <p class="faq-a">
+          To achieve the strongest operational security (OpSec):
+          <br><br>
+          1. <strong>Wait between shield and unshield:</strong> Allowing multiple other deposits to enter the Merkle tree deepens the anonymity set before you withdraw.
+          <br>
+          2. <strong>Avoid identical deposit/withdrawal amounts:</strong> If you deposit 100 ABEY and immediately withdraw 100 ABEY, heuristic analysts might correlate the amounts. Transacting privately or withdrawing in uneven increments breaks timing and amount correlations.
+          <br>
+          3. <strong>Never withdraw to your deposit address:</strong> Always withdraw to a fresh, unlinked wallet address.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- Bottom Action Banner -->
+    <div class="cta-banner">
+      <h3>Ready to Experience Real Privacy?</h3>
+      <p>Connect your wallet to AbeyChain Testnet and test the full shielding, private transfer, and relayer flow.</p>
+      <div class="cta-btn-row">
+        <a href="https://app.mosoo.xyz" target="_blank" class="btn-primary-action">
+          <span>Launch Privacy Cockpit</span>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M6 3L11 8L6 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </a>
+        <a href="how-it-works.html" class="btn-secondary-action">
+          <span>Read Architecture Guide</span>
+        </a>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Global Footer -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="brand-group">
+          <div class="brand-logo-mark"><span class="brand-glyph">🛡️</span></div>
+          <span class="brand-name">MOSOO</span>
+        </div>
+        <p class="footer-desc">Institutional zero-knowledge privacy engine engineered natively for the AbeyChain ecosystem.</p>
+        <span class="footer-contract-note mono">Pool Contract: 0x3aa5aA8Fc12b4C589300638522F0ea9A783305Eb</span>
+      </div>
+
+      <div class="footer-cols">
+        <div class="f-col">
+          <h5>Protocol</h5>
+          <a href="index.html">Overview</a>
+          <a href="how-it-works.html">How It Works</a>
+          <a href="ecosystem.html">Ecosystem</a>
+          <a href="security.html">Security</a>
+        </div>
+        <div class="f-col">
+          <h5>Applications</h5>
+          <a href="https://app.mosoo.xyz" target="_blank">Privacy Cockpit</a>
+          <a href="https://explorer.mosoo.xyz" target="_blank">MosooScan Explorer</a>
+          <a href="faq.html">FAQ</a>
+        </div>
+        <div class="f-col">
+          <h5>Network Specs</h5>
+          <a href="https://testnet.abeyscan.com" target="_blank">AbeyChain (ID: 178)</a>
+          <a href="https://rpc.mosoo.xyz/health" target="_blank">Relayer Daemon</a>
+          <a href="https://testnet.abeyscan.com/address/0x3aa5aA8Fc12b4C589300638522F0ea9A783305Eb#code" target="_blank">Verified Contract (AbeyScan)</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar mono">
+      <span>© 2026 Mosoo Privacy Protocol • Zero-Knowledge Core • AbeyChain Testnet</span>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

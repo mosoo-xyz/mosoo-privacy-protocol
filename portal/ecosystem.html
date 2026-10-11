@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Ecosystem & Use Cases — Mosoo Privacy Protocol</title>
+  <meta name="description" content="Discover real-world use cases for zero-knowledge privacy on AbeyChain: confidential DAO payroll, anti-MEV institutional trading, and selective compliance viewing keys.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-dark">
+  <canvas id="zk-canvas"></canvas>
+  <div id="cursor-glow" class="cursor-glow"></div>
+
+  <!-- Command Palette Modal -->
+  <div id="cmd-palette-backdrop" class="cmd-backdrop">
+    <div class="cmd-box">
+      <div class="cmd-input-wrap">
+        <span class="cmd-search-icon">🔍</span>
+        <input type="text" id="cmd-input" placeholder="Type a command or jump to... (e.g. Shield, Cloak, Tree, Prover, Explorer)" autocomplete="off">
+        <span class="cmd-esc-tag">ESC</span>
+      </div>
+      <div class="cmd-results" id="cmd-results">
+        <div class="cmd-item" data-action="dapp"><span class="cmd-icon">⚡</span> Launch Privacy Cockpit (DApp)</div>
+        <div class="cmd-item" data-action="how-it-works"><span class="cmd-icon">📖</span> How It Works (Architecture Guide)</div>
+        <div class="cmd-item" data-action="ecosystem"><span class="cmd-icon">🌐</span> Ecosystem & Real Use Cases</div>
+        <div class="cmd-item" data-action="security"><span class="cmd-icon">🔒</span> Security Architecture & Audits</div>
+        <div class="cmd-item" data-action="faq"><span class="cmd-icon">❓</span> Frequently Asked Questions</div>
+        <div class="cmd-item" data-action="cloak"><span class="cmd-icon">🛡️</span> Test Anonymity Cloak Simulator</div>
+        <div class="cmd-item" data-action="tree"><span class="cmd-icon">🌿</span> Explore Poseidon Merkle Tree</div>
+        <div class="cmd-item" data-action="demo"><span class="cmd-icon">🌀</span> Run Client-Side Groth16 Prover</div>
+        <div class="cmd-item" data-action="explorer"><span class="cmd-icon">🔍</span> MosooScan ZK Explorer</div>
+        <div class="cmd-item" data-action="theme"><span class="cmd-icon">🌓</span> Toggle Night / Day Mode</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Navigation Drawer -->
+  <div id="mobile-nav-drawer" class="mobile-nav-drawer">
+    <div class="m-nav-header">
+      <div class="brand-titles">
+        <span class="brand-title">MOSOO</span>
+        <span class="brand-tag">MENU</span>
+      </div>
+      <button id="btn-close-mobile-nav" class="btn-mobile-nav" style="display:flex;">✕</button>
+    </div>
+    <div class="m-nav-links">
+      <a href="index.html" class="m-nav-link"><span>🏛️ Protocol Overview</span> <span>→</span></a>
+      <a href="how-it-works.html" class="m-nav-link"><span>📖 How It Works</span> <span>→</span></a>
+      <a href="ecosystem.html" class="m-nav-link active"><span>🌐 Ecosystem & Use Cases</span> <span>→</span></a>
+      <a href="security.html" class="m-nav-link"><span>🔒 Security Architecture</span> <span>→</span></a>
+      <a href="faq.html" class="m-nav-link"><span>❓ Frequently Asked Questions</span> <span>→</span></a>
+      <a href="https://explorer.mosoo.xyz" target="_blank" class="m-nav-link"><span>🔍 MosooScan Explorer</span> <span>↗</span></a>
+    </div>
+    <div class="m-nav-footer">
+      <a href="https://app.mosoo.xyz" target="_blank" class="btn-primary-action" style="width:100%; justify-content:center;">
+        <span>Launch Privacy Cockpit</span>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M6 3L11 8L6 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <!-- High-Profile Floating Header -->
+  <header class="header">
+    <div class="nav-shell">
+      <a href="index.html" class="brand-group">
+        <div class="logo-orb">
+          <img src="assets/logo.png" alt="Mosoo" class="brand-logo-img">
+        </div>
+        <div class="brand-titles">
+          <span class="brand-title">MOSOO</span>
+          <span class="brand-tag">PROTOCOL</span>
+        </div>
+      </a>
+
+      <nav class="nav-links">
+        <a href="index.html" class="nav-item">Overview</a>
+        <a href="how-it-works.html" class="nav-item">How It Works</a>
+        <a href="ecosystem.html" class="nav-item active">Ecosystem</a>
+        <a href="security.html" class="nav-item">Security</a>
+        <a href="faq.html" class="nav-item">FAQ</a>
+        <a href="https://explorer.mosoo.xyz" target="_blank" class="nav-item">MosooScan <span class="tag-live">LIVE</span></a>
+      </nav>
+
+      <div class="nav-controls">
+        <button id="btn-cmd" class="btn-cmd-trigger" title="Command Palette (Ctrl+K)">
+          <span>⌘K</span>
+        </button>
+        <button id="theme-toggle" class="btn-control" title="Switch Day/Night Mode">
+          <span class="icon-sun">☀️</span>
+          <span class="icon-moon">🌙</span>
+        </button>
+        <button id="btn-mobile-nav" class="btn-mobile-nav" aria-label="Toggle Navigation">
+          <span>☰</span>
+        </button>
+        <a href="https://app.mosoo.xyz" target="_blank" class="btn-launch-terminal">
+          <span class="pulse-beacon"></span>
+          <span>Launch DApp</span>
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M3 13L13 3M13 3H5M13 3V11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Subpage Hero -->
+  <section class="subpage-hero">
+    <div class="subpage-breadcrumb">
+      <a href="index.html">Protocol</a>
+      <span>/</span>
+      <span>Applications</span>
+      <span>/</span>
+      <span style="color:var(--green-primary);">Ecosystem & Use Cases</span>
+    </div>
+
+    <h1 class="subpage-title">
+      Real-World Privacy for <br>
+      <span class="gradient-text">Individuals & Institutions.</span>
+    </h1>
+
+    <p class="subpage-subtitle">
+      Privacy is not about evasion—it is the basic prerequisite for fair markets, enterprise adoption, and personal safety. Without privacy, public blockchains cannot replace traditional banking.
+    </p>
+  </section>
+
+  <!-- Subpage Body Content -->
+  <main class="subpage-body">
+
+    <!-- Analogy / Perspective Box -->
+    <div class="analogy-box">
+      <div class="analogy-header">
+        <span class="analogy-badge">The Fundamental Problem</span>
+        <h3 class="analogy-title">Why Total Transparency Fails in the Real World</h3>
+      </div>
+      <p class="analogy-desc">
+        Imagine if your credit card statement, monthly salary, and mortgage balance were printed on a neon sign outside your front door for anyone to see. No business could negotiate supplier rates, no company could keep staff salaries confidential, and no individual would feel safe walking down the street.
+        <br><br>
+        Yet that is exactly how public blockchains operate today: every wallet address reveals its entire history, portfolio balance, and counterparties forever. <strong>Mosoo restores the privacy you already take for granted in everyday commerce.</strong>
+      </p>
+    </div>
+
+    <!-- Core Use Cases Grid -->
+    <h2 style="font-size: 26px; font-weight: 700; margin: 48px 0 20px;">Four Everyday Applications</h2>
+
+    <div class="grid-2col">
+      
+      <!-- Use Case 1: Payroll -->
+      <div class="feature-box">
+        <div class="fb-icon">💼</div>
+        <h3 class="fb-title">Confidential Web3 Payroll & Invoicing</h3>
+        <p class="fb-desc">
+          When a DAO or blockchain company pays its contributors today, everyone can look up an employee's salary and past savings simply by checking their wallet on a block explorer. 
+          <br><br>
+          With Mosoo, companies can fund a private pool once and distribute wages directly to contributors' shielded viewing keys. Employees receive their compensation without their total net worth or spending patterns being broadcast to coworkers or competitors.
+        </p>
+        <div class="fb-meta mono">✔ Zero on-chain salary leaks • Multi-UTXO payouts</div>
+      </div>
+
+      <!-- Use Case 2: MEV & Whale Protection -->
+      <div class="feature-box">
+        <div class="fb-icon">🛡️</div>
+        <h3 class="fb-title">Anti-MEV & Institutional Trading</h3>
+        <p class="fb-desc">
+          Automated arbitrage bots and "sandwich" searchers monitor public mempools 24/7. When a trader places a sizable order, bots front-run the trade and extract slippage profit at the trader's expense.
+          <br><br>
+          Mosoo routes trades through zero-knowledge state changes and gasless relayers. Because order amounts and token directions are encrypted inside Poseidon notes, searcher bots cannot inspect or sandwich the trade.
+        </p>
+        <div class="fb-meta mono">✔ Complete sandwich bot immunity • Zero frontrunning</div>
+      </div>
+
+      <!-- Use Case 3: Personal Safety -->
+      <div class="feature-box">
+        <div class="fb-icon">🔒</div>
+        <h3 class="fb-title">Personal Financial Safety & Physical Security</h3>
+        <p class="fb-desc">
+          If you pay a friend for dinner or buy an item from a local merchant using crypto, they now have your wallet address. They can inspect your balance, see your other transactions, and see every asset you own.
+          <br><br>
+          By holding funds in Mosoo notes, your main savings remain completely invisible. When transacting publicly, you simply unshield the exact required amount to a fresh address, leaving zero link to your primary wealth.
+        </p>
+        <div class="fb-meta mono">✔ Unlinkable peer-to-peer transfers • Cash-like digital hygiene</div>
+      </div>
+
+      <!-- Use Case 4: Selective Compliance -->
+      <div class="feature-box">
+        <div class="fb-icon">📜</div>
+        <h3 class="fb-title">Selective Compliance via Viewing Keys</h3>
+        <p class="fb-desc">
+          Early privacy systems were condemned because they were total black boxes: you either revealed everything to the world or proved nothing to anyone.
+          <br><br>
+          Mosoo separates <strong>Spending Authority</strong> from <strong>Read-Only Auditability</strong>. You can export a cryptographic <em>Stealth Viewing Key</em> to share with your tax accountant, auditor, or legal regulator. They can independently verify your funds and tax liability without gaining the power to spend your coins.
+        </p>
+        <div class="fb-meta mono">✔ Read-only cryptographic audits • Regulatory peace of mind</div>
+      </div>
+
+    </div>
+
+    <!-- Supported Assets & Roadmap -->
+    <h2 style="font-size: 26px; font-weight: 700; margin: 48px 0 20px;">Asset Support Matrix</h2>
+
+    <div class="spec-table-wrap">
+      <table class="spec-table mono">
+        <thead>
+          <tr>
+            <th>Asset</th>
+            <th>Type</th>
+            <th>Circuit Support</th>
+            <th>Status on AbeyChain</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>ABEY</strong></td>
+            <td>Native L1 Coin</td>
+            <td>Poseidon-BN254 Single & Multi-UTXO</td>
+            <td><span style="color:var(--green-primary); font-weight:700;">🟢 LIVE on Testnet (Pool 0x3aa5...05Eb)</span></td>
+          </tr>
+          <tr>
+            <td><strong>mUSDT</strong></td>
+            <td>Shielded Stablecoin</td>
+            <td>Zero-Knowledge ERC-20 Vault Note</td>
+            <td><span style="color:var(--green-primary); font-weight:700;">🟢 LIVE on Testnet (ERC-20 0xeF89...2CB)</span></td>
+          </tr>
+          <tr>
+            <td><strong>mBTC / mETH</strong></td>
+            <td>Cross-Chain Wrapped</td>
+            <td>Multi-Asset Cryptographic Tree</td>
+            <td><span style="color:#f59e0b; font-weight:700;">🟡 Phase 2 Integration Pipeline</span></td>
+          </tr>
+          <tr>
+            <td><strong>Private DEX AMM</strong></td>
+            <td>Encrypted Swap Engine</td>
+            <td>Batch-settled ZK Balance Inverters</td>
+            <td><span style="color:#f59e0b; font-weight:700;">🟡 Phase 3 Ecosystem Expansion</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- The Relayer Network Ecosystem -->
+    <h2 style="font-size: 26px; font-weight: 700; margin: 48px 0 20px;">The Independent Relayer Network</h2>
+    <p style="font-size: 15px; color: var(--text-muted); line-height: 1.6; margin-bottom: 24px;">
+      Mosoo does not rely on a single central server to submit transactions. Anyone with a node and native ABEY can operate a Relayer Daemon. 
+      Relayers compete on speed and reliability to broadcast verified zero-knowledge proofs to AbeyChain miners.
+    </p>
+
+    <div class="grid-3col">
+      <div class="feature-box">
+        <div class="fb-icon">⚡</div>
+        <h3 class="fb-title">Trustless Architecture</h3>
+        <p class="fb-desc">Relayers cannot change your withdrawal address, alter the amount, or steal your tokens. If they modify a single byte, the smart contract's proof verification reverts immediately.</p>
+      </div>
+
+      <div class="feature-box">
+        <div class="fb-icon">🛡️</div>
+        <h3 class="fb-title">Pre-Flight Simulation</h3>
+        <p class="fb-desc">Relayer nodes simulate transactions via <code>staticCall</code> before broadcasting on-chain, ensuring zero gas is wasted on invalid transactions or malicious mempool spam.</p>
+      </div>
+
+      <div class="feature-box">
+        <div class="fb-icon">💰</div>
+        <h3 class="fb-title">Sustainable Economics</h3>
+        <p class="fb-desc">Operators earn a small network fee (typically 0.1% to 0.3%) deducted directly from the unshielded note, aligning incentives between users and node operators.</p>
+      </div>
+    </div>
+
+    <!-- Bottom Action Banner -->
+    <div class="cta-banner">
+      <h3>Ready to Protect Your Transactions?</h3>
+      <p>Test the privacy cockpit on AbeyChain Testnet. Shield funds, manage viewing keys, and experience complete on-chain privacy.</p>
+      <div class="cta-btn-row">
+        <a href="https://app.mosoo.xyz" target="_blank" class="btn-primary-action">
+          <span>Enter Privacy Cockpit</span>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M6 3L11 8L6 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </a>
+        <a href="security.html" class="btn-secondary-action">
+          <span>Review Security Architecture</span>
+        </a>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Global Footer -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="brand-group">
+          <div class="brand-logo-mark"><span class="brand-glyph">🛡️</span></div>
+          <span class="brand-name">MOSOO</span>
+        </div>
+        <p class="footer-desc">Institutional zero-knowledge privacy engine engineered natively for the AbeyChain ecosystem.</p>
+        <span class="footer-contract-note mono">Pool Contract: 0x3aa5aA8Fc12b4C589300638522F0ea9A783305Eb</span>
+      </div>
+
+      <div class="footer-cols">
+        <div class="f-col">
+          <h5>Protocol</h5>
+          <a href="index.html">Overview</a>
+          <a href="how-it-works.html">How It Works</a>
+          <a href="ecosystem.html">Ecosystem</a>
+          <a href="security.html">Security</a>
+        </div>
+        <div class="f-col">
+          <h5>Applications</h5>
+          <a href="https://app.mosoo.xyz" target="_blank">Privacy Cockpit</a>
+          <a href="https://explorer.mosoo.xyz" target="_blank">MosooScan Explorer</a>
+          <a href="faq.html">FAQ</a>
+        </div>
+        <div class="f-col">
+          <h5>Network Specs</h5>
+          <a href="https://testnet.abeyscan.com" target="_blank">AbeyChain (ID: 178)</a>
+          <a href="https://rpc.mosoo.xyz/health" target="_blank">Relayer Daemon</a>
+          <a href="https://testnet.abeyscan.com/address/0x3aa5aA8Fc12b4C589300638522F0ea9A783305Eb#code" target="_blank">Verified Contract (AbeyScan)</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar mono">
+      <span>© 2026 Mosoo Privacy Protocol • Zero-Knowledge Core • AbeyChain Testnet</span>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

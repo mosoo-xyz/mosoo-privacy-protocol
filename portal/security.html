@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Security Architecture & Cryptography — Mosoo Privacy Protocol</title>
+  <meta name="description" content="Technical review of Mosoo's cryptographic invariants, Poseidon BN254 hash functions, smart contract defenses, and bug bounty program on AbeyChain.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-dark">
+  <canvas id="zk-canvas"></canvas>
+  <div id="cursor-glow" class="cursor-glow"></div>
+
+  <!-- Command Palette Modal -->
+  <div id="cmd-palette-backdrop" class="cmd-backdrop">
+    <div class="cmd-box">
+      <div class="cmd-input-wrap">
+        <span class="cmd-search-icon">🔍</span>
+        <input type="text" id="cmd-input" placeholder="Type a command or jump to... (e.g. Shield, Cloak, Tree, Prover, Explorer)" autocomplete="off">
+        <span class="cmd-esc-tag">ESC</span>
+      </div>
+      <div class="cmd-results" id="cmd-results">
+        <div class="cmd-item" data-action="dapp"><span class="cmd-icon">⚡</span> Launch Privacy Cockpit (DApp)</div>
+        <div class="cmd-item" data-action="how-it-works"><span class="cmd-icon">📖</span> How It Works (Architecture Guide)</div>
+        <div class="cmd-item" data-action="ecosystem"><span class="cmd-icon">🌐</span> Ecosystem & Real Use Cases</div>
+        <div class="cmd-item" data-action="security"><span class="cmd-icon">🔒</span> Security Architecture & Audits</div>
+        <div class="cmd-item" data-action="faq"><span class="cmd-icon">❓</span> Frequently Asked Questions</div>
+        <div class="cmd-item" data-action="cloak"><span class="cmd-icon">🛡️</span> Test Anonymity Cloak Simulator</div>
+        <div class="cmd-item" data-action="tree"><span class="cmd-icon">🌿</span> Explore Poseidon Merkle Tree</div>
+        <div class="cmd-item" data-action="demo"><span class="cmd-icon">🌀</span> Run Client-Side Groth16 Prover</div>
+        <div class="cmd-item" data-action="explorer"><span class="cmd-icon">🔍</span> MosooScan ZK Explorer</div>
+        <div class="cmd-item" data-action="theme"><span class="cmd-icon">🌓</span> Toggle Night / Day Mode</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Navigation Drawer -->
+  <div id="mobile-nav-drawer" class="mobile-nav-drawer">
+    <div class="m-nav-header">
+      <div class="brand-titles">
+        <span class="brand-title">MOSOO</span>
+        <span class="brand-tag">MENU</span>
+      </div>
+      <button id="btn-close-mobile-nav" class="btn-mobile-nav" style="display:flex;">✕</button>
+    </div>
+    <div class="m-nav-links">
+      <a href="index.html" class="m-nav-link"><span>🏛️ Protocol Overview</span> <span>→</span></a>
+      <a href="how-it-works.html" class="m-nav-link"><span>📖 How It Works</span> <span>→</span></a>
+      <a href="ecosystem.html" class="m-nav-link"><span>🌐 Ecosystem & Use Cases</span> <span>→</span></a>
+      <a href="security.html" class="m-nav-link active"><span>🔒 Security Architecture</span> <span>→</span></a>
+      <a href="faq.html" class="m-nav-link"><span>❓ Frequently Asked Questions</span> <span>→</span></a>
+      <a href="https://explorer.mosoo.xyz" target="_blank" class="m-nav-link"><span>🔍 MosooScan Explorer</span> <span>↗</span></a>
+    </div>
+    <div class="m-nav-footer">
+      <a href="https://app.mosoo.xyz" target="_blank" class="btn-primary-action" style="width:100%; justify-content:center;">
+        <span>Launch Privacy Cockpit</span>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M6 3L11 8L6 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <!-- Main Navbar -->
+  <header class="header">
+    <div class="nav-shell">
+      <a href="index.html" class="brand-group">
+        <div class="logo-orb">
+          <img src="assets/logo.png" alt="Mosoo" class="brand-logo-img">
+        </div>
+        <div class="brand-titles">
+          <span class="brand-title">MOSOO</span>
+          <span class="brand-tag">PROTOCOL</span>
+        </div>
+      </a>
+
+      <nav class="nav-links">
+        <a href="index.html" class="nav-item">Overview</a>
+        <a href="how-it-works.html" class="nav-item">How It Works</a>
+        <a href="ecosystem.html" class="nav-item">Ecosystem</a>
+        <a href="security.html" class="nav-item active">Security</a>
+        <a href="faq.html" class="nav-item">FAQ</a>
+        <a href="https://explorer.mosoo.xyz" target="_blank" class="nav-item">MosooScan <span class="tag-live">LIVE</span></a>
+      </nav>
+
+      <div class="nav-controls">
+        <button id="btn-cmd" class="btn-cmd-trigger" title="Command Palette (Ctrl+K)">
+          <span>⌘K</span>
+        </button>
+        <button id="theme-toggle" class="btn-control" title="Switch Day/Night Mode">
+          <span class="icon-sun">☀️</span>
+          <span class="icon-moon">🌙</span>
+        </button>
+        <button id="btn-mobile-nav" class="btn-mobile-nav" aria-label="Toggle Navigation">
+          <span>☰</span>
+        </button>
+        <a href="https://app.mosoo.xyz" target="_blank" class="btn-launch-terminal">
+          <span class="pulse-beacon"></span>
+          <span>Launch Cockpit</span>
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M3 13L13 3M13 3H5M13 3V11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Subpage Hero -->
+  <section class="subpage-hero">
+    <div class="subpage-breadcrumb">
+      <a href="index.html">Protocol</a>
+      <span>/</span>
+      <span>Trust & Verification</span>
+      <span>/</span>
+      <span style="color:var(--green-primary);">Security Architecture</span>
+    </div>
+
+    <h1 class="subpage-title">
+      Cryptographic Invariants & <br>
+      <span class="gradient-text">Smart Contract Hardening.</span>
+    </h1>
+
+    <p class="subpage-subtitle">
+      Zero-knowledge systems cannot afford ambiguity. In our architecture, mathematical proofs replace human trust. Here is a comprehensive technical breakdown of our threat models, circuit constraints, and smart contract invariants.
+    </p>
+  </section>
+
+  <!-- Subpage Body Content -->
+  <main class="subpage-body">
+
+    <!-- Cryptographic Foundation Grid -->
+    <h2 style="font-size: 26px; font-weight: 700; margin: 48px 0 20px;">The Cryptographic Foundation</h2>
+
+    <div class="grid-3col">
+      
+      <div class="feature-box">
+        <div class="fb-icon">🔢</div>
+        <h3 class="fb-title">BN254 Pairing Curve</h3>
+        <p class="fb-desc">
+          Mosoo uses the alt_bn128 (BN254) elliptic curve. It features native EVM precompile support (addresses <code>0x06</code>, <code>0x07</code>, and <code>0x08</code>), allowing fast on-chain proof verification without excessive gas overhead.
+        </p>
+        <div class="fb-meta mono">Order: 21888242871839275222...</div>
+      </div>
+
+      <div class="feature-box">
+        <div class="fb-icon">⚙️</div>
+        <h3 class="fb-title">PoseidonT3 Hasher</h3>
+        <p class="fb-desc">
+          Unlike Keccak-256 (which requires ~25,000 constraints per hash in ZK circuits), the Poseidon hash is designed natively over algebraic fields. It executes in just <strong>240 constraints</strong>, enabling sub-3-second client proving in web browsers.
+        </p>
+        <div class="fb-meta mono">ZK-Friendly Algebraic S-Boxes</div>
+      </div>
+
+      <div class="feature-box">
+        <div class="fb-icon">🔐</div>
+        <h3 class="fb-title">Nullifier Determinism</h3>
+        <p class="fb-desc">
+          Every note possesses a secret spending salt. When unshielded, the circuit derives a deterministic public nullifier: <code>Poseidon(SecretSalt, LeafIndex)</code>. Double-spending is mathematically prohibited by on-chain mapping.
+        </p>
+        <div class="fb-meta mono">Strict 1-to-1 Note Nullification</div>
+      </div>
+
+    </div>
+
+    <!-- Hardened Contract Invariants -->
+    <h2 style="font-size: 26px; font-weight: 700; margin: 48px 0 20px;">Smart Contract Invariants & Defenses</h2>
+    <p style="font-size: 15px; color: var(--text-muted); line-height: 1.6; margin-bottom: 24px;">
+      The <code>MosooPrivacyPool</code> contract incorporates five specific defensive safeguards against known vulnerabilities that affected legacy privacy protocols:
+    </p>
+
+    <div class="grid-2col">
+
+      <div class="feature-box">
+        <div class="fb-icon">🛡️</div>
+        <h3 class="fb-title">1. Scalar Field Overflow Boundary Checks</h3>
+        <p class="fb-desc">
+          If a user submits an element larger than the BN254 scalar field prime (<code>FIELD_SIZE</code>), integer aliasing can occur where two different values represent the exact same curve point. 
+          <br><br>
+          Every input in Mosoo enforces:
+          <br>
+          <code>require(uint256(commitment) &lt; FIELD_SIZE, "Mosoo: commitment outside field");</code>
+        </p>
+        <div class="fb-meta mono">Defends against field-wrapping attacks</div>
+      </div>
+
+      <div class="feature-box">
+        <div class="fb-icon">🔒</div>
+        <h3 class="fb-title">2. Reentrancy Lock & State Pre-Update</h3>
+        <p class="fb-desc">
+          All external withdrawal functions adhere strictly to the <strong>Checks-Effects-Interactions</strong> pattern. 
+          The nullifier hash is marked spent in contract storage (<code>nullifierHashes[nullifierHash] = true</code>) before any ETH/ABEY tokens are transferred to the recipient or relayer.
+        </p>
+        <div class="fb-meta mono">nonReentrant modifier on all entrypoints</div>
+      </div>
+
+      <div class="feature-box">
+        <div class="fb-icon">⚡</div>
+        <h3 class="fb-title">3. Historical Root Ring Buffer (64 Slots)</h3>
+        <p class="fb-desc">
+          On public blockchains, network latency means multiple deposits can happen while you are generating your proof. 
+          If the pool only checked the current root, your transaction would revert. Our ring buffer stores the 64 most recent roots, guaranteeing your valid proof succeeds even during high network congestion.
+        </p>
+        <div class="fb-meta mono">Race-condition proof validation buffer</div>
+      </div>
+
+      <div class="feature-box">
+        <div class="fb-icon">💎</div>
+        <h3 class="fb-title">4. Pool Solvency & Transact Fee Protection</h3>
+        <p class="fb-desc">
+          In private-to-private transactions (<code>transact</code>), no funds leave the pool. If a relayer fee is paid, that fee must NOT be taken from the pool's collective balance (which would cause undercollateralization). 
+          <br><br>
+          The contract strictly requires attached native gas:
+          <br>
+          <code>require(msg.value &gt;= fee, "transact fee must be attached via msg.value");</code>
+        </p>
+        <div class="fb-meta mono">Guarantees 100% pool solvency at all times</div>
+      </div>
+
+    </div>
+
+    <!-- Verified On-Chain Specifications -->
+    <h2 style="font-size: 26px; font-weight: 700; margin: 48px 0 20px;">On-Chain Deployment Specifications</h2>
+
+    <div class="spec-table-wrap">
+      <table class="spec-table mono">
+        <thead>
+          <tr>
+            <th>Component</th>
+            <th>Contract / Parameter</th>
+            <th>Details & Safeguards</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Hardened Pool Contract</strong></td>
+            <td><code>0x3aa5aA8Fc12b4C589300638522F0ea9A783305Eb</code></td>
+            <td>AbeyChain Testnet (Chain ID: 178) • Reentrancy Guarded • Full 20-depth tree</td>
+          </tr>
+          <tr>
+            <td><strong>PoseidonT3 Hasher</strong></td>
+            <td><code>0x91f303F459ecB99CF24efaea79bc57d9C0fc9A9e</code></td>
+            <td>Pre-calculated round constants on BN254 scalar field</td>
+          </tr>
+          <tr>
+            <td><strong>Supported ERC-20 (USDT)</strong></td>
+            <td><code>0xeF89C5b126f90Fb728A022bc77377d793dCD22CB</code></td>
+            <td>6 Decimals • Multi-Token Shielding & Relayer Unshield Active</td>
+          </tr>
+          <tr>
+            <td><strong>Proof Authorizer</strong></td>
+            <td><code>0x0eE7acb81363F350a26E16B5936A2076bDC864a8</code></td>
+            <td>EIP-191 domain-bound message validation (Testnet Stage)</td>
+          </tr>
+          <tr>
+            <td><strong>Relayer RPC Endpoint</strong></td>
+            <td><code>https://rpc.mosoo.xyz</code></td>
+            <td>Preflight simulation via staticCall • Rate-limited daemon • CORS isolated</td>
+          </tr>
+          <tr>
+            <td><strong>Historical Root Capacity</strong></td>
+            <td><code>ROOT_HISTORY_SIZE = 64</code></td>
+            <td>Prevents front-running root invalidation</td>
+          </tr>
+          <tr>
+            <td><strong>Maximum Tree Leaves</strong></td>
+            <td><code>2^20 = 1,048,576 Notes</code></td>
+            <td>High-capacity incremental binary tree</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Responsible Disclosure & Bug Bounty -->
+    <div class="analogy-box" style="border-left-color: #f59e0b;">
+      <div class="analogy-header">
+        <span class="analogy-badge" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">Security Collaboration</span>
+        <h3 class="analogy-title">Responsible Disclosure & Bug Bounty Program</h3>
+      </div>
+      <p class="analogy-desc">
+        We welcome independent security researchers, cryptographers, and white-hat hackers to inspect our contracts and circuits. 
+        If you discover a vulnerability affecting user funds or proof validity, please submit a responsible disclosure report to <code>security@mosoo.xyz</code>.
+        <br><br>
+        <strong>Reward Tiers:</strong>
+        <br>
+        • <strong>Critical (Fund loss, unauthorized unshielding):</strong> Up to $25,000 USD
+        <br>
+        • <strong>High (Temporary pool freeze, state desynchronization):</strong> Up to $10,000 USD
+        <br>
+        • <strong>Medium (Relayer griefing, rate limit bypass):</strong> Up to $2,500 USD
+      </p>
+    </div>
+
+    <!-- Bottom Action Banner -->
+    <div class="cta-banner">
+      <h3>Inspect Every Transaction Independently</h3>
+      <p>Verify contract roots, track shielded volume, and inspect nullifier states in real-time on the MosooScan Explorer.</p>
+      <div class="cta-btn-row">
+        <a href="https://explorer.mosoo.xyz" target="_blank" class="btn-primary-action">
+          <span>Open MosooScan Explorer</span>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M6 3L11 8L6 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </a>
+        <a href="faq.html" class="btn-secondary-action">
+          <span>Read Frequently Asked Questions</span>
+        </a>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Global Footer -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="brand-group">
+          <div class="brand-logo-mark"><span class="brand-glyph">🛡️</span></div>
+          <span class="brand-name">MOSOO</span>
+        </div>
+        <p class="footer-desc">Institutional zero-knowledge privacy engine engineered natively for the AbeyChain ecosystem.</p>
+        <span class="footer-contract-note mono">Pool Contract: 0x3aa5aA8Fc12b4C589300638522F0ea9A783305Eb</span>
+      </div>
+
+      <div class="footer-cols">
+        <div class="f-col">
+          <h5>Protocol</h5>
+          <a href="index.html">Overview</a>
+          <a href="how-it-works.html">How It Works</a>
+          <a href="ecosystem.html">Ecosystem</a>
+          <a href="security.html">Security</a>
+        </div>
+        <div class="f-col">
+          <h5>Applications</h5>
+          <a href="https://app.mosoo.xyz" target="_blank">Privacy Cockpit</a>
+          <a href="https://explorer.mosoo.xyz" target="_blank">MosooScan Explorer</a>
+          <a href="faq.html">FAQ</a>
+        </div>
+        <div class="f-col">
+          <h5>Network Specs</h5>
+          <a href="https://testnet.abeyscan.com" target="_blank">AbeyChain (ID: 178)</a>
+          <a href="https://rpc.mosoo.xyz/health" target="_blank">Relayer Daemon</a>
+          <a href="https://testnet.abeyscan.com/address/0x3aa5aA8Fc12b4C589300638522F0ea9A783305Eb#code" target="_blank">Verified Contract (AbeyScan)</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar mono">
+      <span>© 2026 Mosoo Privacy Protocol • Zero-Knowledge Core • AbeyChain Testnet</span>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

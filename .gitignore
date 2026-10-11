@@ -1,0 +1,30 @@
+# Dependency Directories
+node_modules/
+package-lock.json
+
+# Environment & Secrets (NEVER COMMIT)
+.env
+.env.*
+*.env
+*.pem
+*.key
+*.id_rsa
+*.secret
+.github_creds.json
+scripts/.github_creds.json
+
+# Azure & Cloud Deployment Scripts (contain infrastructure details)
+scripts/
+!scripts/README.md
+
+# Build / Tmp Artifacts
+build/
+
+# OS and Editor Artifacts
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
+npm-debug.log*
+yarn-debug.log*
