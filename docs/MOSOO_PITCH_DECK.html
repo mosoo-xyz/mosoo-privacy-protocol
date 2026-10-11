@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MOSOO Privacy Protocol — Abey Foundation Grant Proposal & Pitch Deck</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+    
+    :root {
+      --bg: #0b0f17;
+      --card-bg: #111827;
+      --accent: #10b981;
+      --accent-glow: rgba(16, 185, 129, 0.2);
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --border: #1f2937;
+      --purple: #8b5cf6;
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 40px 20px;
+    }
+    
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    
+    .print-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--accent);
+      color: #000;
+      font-weight: 700;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px var(--accent-glow);
+      font-size: 14px;
+      z-index: 999;
+    }
+    .print-btn:hover { background: #059669; color: #fff; }
+
+    @media print {
+      body { background: #fff; color: #111; padding: 0; }
+      .print-btn { display: none; }
+      .slide { page-break-after: always; border: 1px solid #ddd !important; background: #fff !important; color: #111 !important; box-shadow: none !important; margin-bottom: 20px !important; }
+      .tag, .badge { border: 1px solid #111 !important; color: #111 !important; background: #eee !important; }
+      .code-box { background: #f5f5f5 !important; color: #111 !important; border: 1px solid #ddd !important; }
+      h1, h2, h3 { color: #000 !important; }
+    }
+    
+    .slide {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+    
+    .header-slide {
+      text-align: center;
+      padding: 60px 40px;
+      background: linear-gradient(135deg, #111827 0%, #1a2234 100%);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    
+    .logo-badge {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      background: var(--accent-glow);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      margin-bottom: 16px;
+      font-weight: 600;
+    }
+    
+    h1 { font-size: 36px; font-weight: 800; margin-bottom: 12px; letter-spacing: -0.5px; }
+    h2 { font-size: 24px; font-weight: 700; margin-bottom: 16px; color: var(--accent); display: flex; align-items: center; gap: 10px; }
+    h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; color: #e5e7eb; }
+    p { color: var(--text-muted); margin-bottom: 14px; font-size: 15px; }
+    
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 15px; }
+    
+    .card {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px;
+    }
+    
+    .highlight-card {
+      background: rgba(16, 185, 129, 0.04);
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+    
+    .code-box {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      background: #090d16;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid #1f293d;
+      color: #38bdf8;
+      overflow-x: auto;
+      margin-top: 10px;
+    }
+    
+    ul { list-style: none; }
+    li { position: relative; padding-left: 20px; margin-bottom: 8px; font-size: 14px; color: var(--text-muted); }
+    li::before { content: "▸"; position: absolute; left: 0; color: var(--accent); font-weight: bold; }
+    
+    .metric-value { font-size: 28px; font-weight: 800; color: var(--text); font-family: 'JetBrains Mono', monospace; }
+    .metric-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    .timeline-item {
+      border-left: 2px solid var(--accent);
+      padding-left: 18px;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    .timeline-item::before {
+      content: "";
+      position: absolute;
+      left: -6px;
+      top: 4px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+    
+    .table-spec {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 13px;
+    }
+    .table-spec th, .table-spec td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+    .table-spec th { background: rgba(255,255,255,0.03); color: var(--text); }
+    .table-spec td { color: var(--text-muted); }
+  </style>
+</head>
+<body>
+
+  <button class="print-btn" onclick="window.print()">📥 Save / Print as PDF</button>
+
+  <div class="container">
+
+    <!-- SLIDE 1: COVER -->
+    <div class="slide header-slide">
+      <div class="logo-badge">ABEY FOUNDATION GRANT PROPOSAL</div>
+      <h1>MOSOO PRIVACY PROTOCOL</h1>
+      <p style="font-size: 18px; color: #d1d5db; max-width: 650px; margin: 0 auto 24px;">
+        The First Zero-Knowledge Institutional Privacy & Confidential Multi-UTXO Layer on AbeyChain
+      </p>
+      <div style="display: flex; justify-content: center; gap: 15px; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--accent);">
+        <span>Chain ID: 178 (AbeyChain)</span>
+        <span>•</span>
+        <span>Status: Production Testnet Live</span>
+        <span>•</span>
+        <span>mosoo.xyz</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 2: THE PROBLEM & ABEYCHAIN OPPORTUNITY -->
+    <div class="slide">
+      <h2>01 / The Problem & Abey Opportunity</h2>
+      <p>AbeyChain has developed elite multi-layered transaction throughput. However, like all public EVM chains, transaction data is completely transparent.</p>
+      
+      <div class="grid-2">
+        <div class="card">
+          <h3 style="color: #ef4444;">Current Challenge</h3>
+          <ul>
+            <li><strong>Financial Surveillance:</strong> Every wallet balance, transfer, and DeFi action is publicly visible to competitors and exploiters.</li>
+            <li><strong>Institutional Hesitation:</strong> Enterprises and payroll operators cannot deploy on AbeyChain due to lack of confidential accounting.</li>
+            <li><strong>MEV Exploitation:</strong> Front-running bots extract value from large public transactions on DEXs and liquidity pools.</li>
+          </ul>
+        </div>
+        <div class="card highlight-card">
+          <h3 style="color: var(--accent);">The Mosoo Solution</h3>
+          <ul>
+            <li><strong>Cryptographic Cloak:</strong> Zero-Knowledge SNARK proofs break the link between sender, recipient, and transaction value.</li>
+            <li><strong>Institutional Liquidity:</strong> Attracts privacy-minded capital and high-net-worth volume directly into AbeyChain.</li>
+            <li><strong>Ecosystem Synergy:</strong> Built for deep composability with Abey AMMs, token standards, and inter-app architecture.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 3: PROTOCOL ARCHITECTURE -->
+    <div class="slide">
+      <h2>02 / Core Technical Architecture</h2>
+      <p>Mosoo utilizes modern, hardened zero-knowledge cryptographic primitives engineered for high performance on AbeyChain.</p>
+
+      <div class="grid-3">
+        <div class="card">
+          <div class="metric-label">Hash Engine</div>
+          <div class="metric-value" style="font-size: 20px; color: var(--accent); margin: 6px 0;">Poseidon-BN254</div>
+          <p style="font-size: 12px; margin: 0;">Circuit-optimized algebraic hashing operating over the BN254 scalar field for minimal gas and proving time.</p>
+        </div>
+        <div class="card">
+          <div class="metric-label">Merkle Tree</div>
+          <div class="metric-value" style="font-size: 20px; color: #38bdf8; margin: 6px 0;">Depth 20 Tree</div>
+          <p style="font-size: 12px; margin: 0;">Supports up to 1,048,576 shielded notes with a 64-slot ring buffer cache for concurrent historical Merkle roots.</p>
+        </div>
+        <div class="card">
+          <div class="metric-label">Privacy Model</div>
+          <div class="metric-value" style="font-size: 20px; color: var(--purple); margin: 6px 0;">JoinSplit 2-to-2</div>
+          <p style="font-size: 12px; margin: 0;">UTXO-based note joining and splitting with automatic change note generation and on-chain ECDH encrypted memos.</p>
+        </div>
+      </div>
+
+      <div class="code-box">
+        // Live Smart Contract on Abey Testnet (Chain ID 178)<br>
+        Address: 0x3aa5aA8Fc12b4C589300638522F0ea9A783305Eb<br>
+        Features: nonReentrant | CEI Guard | Nullifier Tracking | Multi-Token Support (ABEY, USDT)
+      </div>
+    </div>
+
+    <!-- SLIDE 4: WHAT IS ALREADY LIVE -->
+    <div class="slide">
+      <h2>03 / Fully Delivered Infrastructure (Live Today)</h2>
+      <p>Unlike early-stage concepts, the entire Mosoo protocol stack is already developed, security-audited, and deployed on Abey Testnet:</p>
+
+      <table class="table-spec">
+        <thead>
+          <tr>
+            <th>Component</th>
+            <th>Live URL</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Landing Portal</strong></td>
+            <td><a href="https://mosoo.xyz" style="color:var(--accent);">https://mosoo.xyz</a></td>
+            <td>✅ Fully Responsive Live Portal</td>
+          </tr>
+          <tr>
+            <td><strong>Privacy Cockpit DApp</strong></td>
+            <td><a href="https://app.mosoo.xyz" style="color:var(--accent);">https://app.mosoo.xyz</a></td>
+            <td>✅ Web3 Terminal with Viewing Key Vault</td>
+          </tr>
+          <tr>
+            <td><strong>MosooScan ZK Explorer</strong></td>
+            <td><a href="https://explorer.mosoo.xyz" style="color:var(--accent);">https://explorer.mosoo.xyz</a></td>
+            <td>✅ Real-Time Merkle Ledger Stream</td>
+          </tr>
+          <tr>
+            <td><strong>Decentralized Relayer</strong></td>
+            <td><a href="https://rpc.mosoo.xyz/health" style="color:var(--accent);">https://rpc.mosoo.xyz/health</a></td>
+            <td>✅ Active Broadcaster Node (Chain 178)</td>
+          </tr>
+          <tr>
+            <td><strong>Code Repository</strong></td>
+            <td><a href="https://github.com/mosoo-xyz/mosoo-privacy-protocol" style="color:var(--accent);">github.com/mosoo-xyz/...</a></td>
+            <td>✅ Audited Codebase Ready for Review</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- SLIDE 5: GRANT REQUEST & MILESTONES -->
+    <div class="slide">
+      <h2>04 / Grant Budget & Milestone Deliverables</h2>
+      <p>We are applying for an Abey Foundation Grant to fund protocol auditing, mainnet scaling, and DEX composability:</p>
+
+      <div class="timeline-item">
+        <h3>Milestone 1: 3rd-Party Security Audit & Groth16 Trusted Ceremony ($15,000)</h3>
+        <p>Engage top-tier Web3 security auditors (CertiK/OpenZeppelin standard) to conduct formal verification of the Solidity contracts and execute the perpetual powers-of-tau ceremony for AbeyChain mainnet verifiers.</p>
+      </div>
+
+      <div class="timeline-item">
+        <h3>Milestone 2: AbeyChain Mainnet Launch & Relayer Cluster ($20,000)</h3>
+        <p>Deploy immutable audited contracts on AbeyChain Mainnet, establish high-availability multi-region Docker relayer clusters with Redis mempool locks, and seed initial pool anonymity sets.</p>
+      </div>
+
+      <div class="timeline-item">
+        <h3>Milestone 3: Confidential DEX Swaps & Proof of Innocence 2.0 ($15,000)</h3>
+        <p>Build atomic routing adapters for Abey AMM DEXs (enabling 1-click private token swaps) and integrate dual-proof Proof of Innocence (PoI 2.0) to mathematically prove non-sanctioned deposit origins.</p>
+      </div>
+
+      <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid var(--accent); border-radius: 10px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+        <span style="font-weight: 700; color: var(--text);">TOTAL GRANT REQUEST</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 800; color: var(--accent);">$50,000 USD (or equivalent ABEY)</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 6: TEAM & CONTACT -->
+    <div class="slide">
+      <h2>05 / Team & Contact Information</h2>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Omkar Chavan</h3>
+          <p style="color: var(--accent); font-size: 13px; font-weight: 600;">Founder & Lead Core Architect</p>
+          <p>Full-stack Web3 engineer with deep specialization in Zero-Knowledge circuits (Circom/SnarkJS), EVM smart contract security, and cryptographic privacy primitives. Lead architect of the Mosoo Privacy Protocol on AbeyChain.</p>
+        </div>
+        <div class="card">
+          <h3>Ecosystem Contributor Network</h3>
+          <p style="color: #38bdf8; font-size: 13px; font-weight: 600;">Infrastructure & Community Operations</p>
+          <p>Global contributors providing devops relayer hosting, node monitoring, frontend UI/UX testing, and Abey developer community outreach.</p>
+        </div>
+      </div>
+
+      <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center; font-size: 14px; color: var(--text-muted);">
+        <p>We welcome a live technical demo and video conference interview with the Abey Foundation committee.</p>
+        <p style="color: var(--accent); font-weight: 600; font-family: 'JetBrains Mono', monospace;">contact@mosoo.xyz • https://mosoo.xyz</p>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

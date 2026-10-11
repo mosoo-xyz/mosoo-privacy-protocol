@@ -1,14 +1,24 @@
 {
-  "name": "mosoo-privacy",
-  "version": "1.0.0",
-  "description": "",
+  "name": "mosoo-privacy-protocol",
+  "version": "2.1.0-enterprise",
+  "description": "Enterprise Zero-Knowledge Privacy Pool and Multi-UTXO Confidential Layer on AbeyChain",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node scripts/test_p1_full_flow.js",
+    "relayer": "node relayer/server.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "abeychain",
+    "zero-knowledge",
+    "zk-snarks",
+    "privacy-pool",
+    "poseidon-hash",
+    "confidential-transactions",
+    "utxo",
+    "abey-grant"
+  ],
+  "author": "MOSOO Core Team",
+  "license": "MIT",
   "dependencies": {
     "circomlibjs": "^0.1.7",
     "dotenv": "^18.0.5",

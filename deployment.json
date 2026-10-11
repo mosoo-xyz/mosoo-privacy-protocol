@@ -1,7 +1,11 @@
 {
-  "poolContract": "0xcC5dA5027952815A02B10f54779679605A63aE8c",
+  "poolContract": "0x3aa5aA8Fc12b4C589300638522F0ea9A783305Eb",
   "poseidonContract": "0x91f303F459ecB99CF24efaea79bc57d9C0fc9A9e",
+  "usdtContract": "0xeF89C5b126f90Fb728A022bc77377d793dCD22CB",
   "proofAuthorizer": "0x0eE7acb81363F350a26E16B5936A2076bDC864a8",
-  "network": "Abey Testnet (178)",
-  "deployedAt": "2026-10-09T06:17:16.372Z"
+  "network": "Abey Testnet",
+  "chainId": 178,
+  "rpcUrl": "https://testrpc.abeychain.com",
+  "version": "2.1.0-enterprise",
+  "deployedAt": "2026-10-11T13:50:00.000Z"
 }
