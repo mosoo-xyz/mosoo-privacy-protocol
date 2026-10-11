@@ -17,8 +17,9 @@ scripts/.github_creds.json
 scripts/
 !scripts/README.md
 
-# Build / Tmp Artifacts
+# Build / Tmp / Local Business Artifacts
 build/
+docs/
 
 # OS and Editor Artifacts
 .DS_Store
