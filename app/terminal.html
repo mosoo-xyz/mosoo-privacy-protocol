@@ -121,7 +121,10 @@
             <span id="pc-public-bal" style="font-weight: 700; color: var(--text-main);">0.00 ABEY</span>
           </div>
           <div style="text-align: right;">
-            <span style="color: var(--text-sub); display: block;">SHIELDED</span>
+            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
+              <span style="color: var(--text-sub);">SHIELDED</span>
+              <button type="button" class="btn-sub-copy mono" onclick="manualSyncVault()" title="Sync notes with relayer" style="padding: 1px 6px; font-size: 10px; cursor: pointer; border-radius: 4px;">🔄 Sync</button>
+            </div>
             <span id="pc-shielded-bal" style="font-weight: 700; color: var(--green-primary);">$0.00</span>
           </div>
         </div>

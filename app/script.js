@@ -187,9 +187,6 @@ async function connectWeb3Wallet(promptSignature = true) {
       dotEl.style.boxShadow = '0 0 10px #3cd070';
     }
 
-    // Query Real Balance
-    await updateRealBalances();
-
     // Update Viewing Key Cards
     if (userKeys) {
       const sideVk = document.getElementById('side-vk');
@@ -201,6 +198,12 @@ async function connectWeb3Wallet(promptSignature = true) {
       const tRecip = document.getElementById('t-recipient');
       // Clean recipient input initialized
     }
+
+    // Automatically Sync Incoming Shielded Notes from Relayer & Shared Vault
+    await syncIncomingNotes();
+
+    // Query Real Balance
+    await updateRealBalances();
 
     // Update On-Chain Leaf Index
     try {
@@ -961,6 +964,11 @@ if (btnDoTransfer) {
           const encryptedMemo = await MosooCrypto.encryptNote(recipientNote, recipient) || "0x";
           const root = await poolContract.getLastRoot();
 
+          // Save recipient note locally to shared registry immediately
+          if (typeof MosooCrypto !== 'undefined' && MosooCrypto.saveSharedNote) {
+            MosooCrypto.saveSharedNote(recipient, recipientNote);
+          }
+
           if (selection.isMultiUtxo && selection.selectedNotes.length > 1) {
             // JoinSplit 2-to-2 mode (Note Jodna & Todna)
             const note1 = selection.selectedNotes[0];
@@ -988,7 +996,17 @@ if (btnDoTransfer) {
             if (data && data.success && data.txHash) {
               txHash = data.txHash;
               MosooCrypto.markNotesSpent(currentAccount, [note1.nullifierHash, note2.nullifierHash]);
-              if (changeNote) MosooCrypto.saveNote(currentAccount, changeNote);
+              if (changeNote) {
+                MosooCrypto.saveNote(currentAccount, changeNote);
+                if (userKeys && userKeys.mosooAddress) {
+                  MosooCrypto.saveSharedNote(userKeys.mosooAddress, changeNote);
+                  fetch(`${CONFIG.relayerUrl}/api/notes/dispatch`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ note: changeNote })
+                  }).catch(() => {});
+                }
+              }
             }
           } else {
             // Single Note Transfer mode
@@ -1016,6 +1034,14 @@ if (btnDoTransfer) {
                 const changeNote = MosooCrypto.createNote(selection.changeAmount.toFixed(4), userKeys ? userKeys.mosooAddress : "0msk1self", asset);
                 changeNote.isChange = true;
                 MosooCrypto.saveNote(currentAccount, changeNote);
+                if (userKeys && userKeys.mosooAddress) {
+                  MosooCrypto.saveSharedNote(userKeys.mosooAddress, changeNote);
+                  fetch(`${CONFIG.relayerUrl}/api/notes/dispatch`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ note: changeNote })
+                  }).catch(() => {});
+                }
               }
             }
           }
@@ -1311,15 +1337,67 @@ function renderNotesTable() {
   `).join('');
 }
 
-function manualSyncVault() {
+// --- Sync Incoming Shielded Notes (Relayer Inbox & Shared Vault) ---
+async function syncIncomingNotes() {
+  if (!userKeys || !userKeys.mosooAddress || !currentAccount) return;
+  try {
+    // 1. Sync from Browser Shared Registry (immediate local cross-wallet delivery)
+    if (typeof MosooCrypto !== 'undefined' && MosooCrypto.getSharedNotes) {
+      const sharedNotes = MosooCrypto.getSharedNotes(userKeys.mosooAddress);
+      for (const sn of sharedNotes) {
+        if (!sn || !sn.commitment) continue;
+        const currentVault = MosooCrypto.getNotes(currentAccount);
+        const exists = currentVault.some(n => n.commitment && n.commitment.toLowerCase() === sn.commitment.toLowerCase());
+        if (!exists) {
+          MosooCrypto.saveNote(currentAccount, sn);
+        }
+      }
+    }
+
+    // 2. Sync from Relayer Inbox (Cloud persistent inbox)
+    const addressToQuery = userKeys.mosooAddress;
+    const res = await fetch(`${CONFIG.relayerUrl}/api/notes/inbox?address=${encodeURIComponent(addressToQuery)}`);
+    const data = await res.json();
+    if (data && data.success && Array.isArray(data.notes)) {
+      let importedCount = 0;
+      for (const note of data.notes) {
+        if (!note || !note.commitment) continue;
+        const currentVault = MosooCrypto.getNotes(currentAccount);
+        const exists = currentVault.some(n => n.commitment && n.commitment.toLowerCase() === note.commitment.toLowerCase());
+        if (!exists) {
+          // Check on-chain if nullifier was already spent
+          let isSpent = false;
+          try {
+            if (poolContract && note.nullifierHash) {
+              isSpent = await poolContract.isSpent(note.nullifierHash);
+            }
+          } catch (_) {}
+          note.spent = isSpent;
+          MosooCrypto.saveNote(currentAccount, note);
+          importedCount++;
+        }
+      }
+      if (importedCount > 0) {
+        console.log(`[MosooVault] Synced ${importedCount} incoming note(s) for ${addressToQuery}`);
+        showToast(`📥 Synced ${importedCount} incoming shielded note(s)!`);
+      }
+    }
+  } catch (err) {
+    console.warn("[MosooVault] Error syncing notes from relayer:", err);
+  }
+}
+
+async function manualSyncVault() {
   if (!currentAccount) {
     showToast("Please connect your wallet first.");
     return;
   }
-  updateRealBalances();
+  showToast("🔄 Syncing notes with Mosoo Relayer...");
+  await syncIncomingNotes();
+  await updateRealBalances();
   renderNotesTable();
   renderUserActivityTelemetry();
-  showToast("Notes vault re-synchronized!");
+  showToast("✅ Notes vault re-synchronized!");
 }
 
 // --- Note Modal Inspector ---
