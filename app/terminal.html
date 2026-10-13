@@ -49,6 +49,54 @@
     </div>
   </div>
 
+  <!-- Connected Account Modal -->
+  <div id="wallet-modal" class="modal-backdrop">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-head">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="background:#3cd070; box-shadow:0 0 10px #3cd070; width:10px; height:10px; border-radius:50%; display:inline-block;"></span>
+          <h3 style="margin:0; font-size:16px;">Account Details</h3>
+        </div>
+        <button id="wallet-modal-close-btn" class="btn-close" onclick="closeWalletModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 20px; display:flex; flex-direction:column; gap:16px;">
+        
+        <!-- Network Info -->
+        <div style="background:var(--bg-sub, rgba(255,255,255,0.03)); border:1px solid var(--border-color); border-radius:8px; padding:12px; display:flex; justify-content:space-between; align-items:center;">
+          <div style="font-size:12px; color:var(--text-sub);">Network</div>
+          <div style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--text-main);">
+            <span>Abeychain Testnet</span>
+            <span class="mono" style="background:rgba(60,208,112,0.15); color:var(--green-primary); padding:2px 6px; border-radius:4px; font-size:10px;">ID 178</span>
+          </div>
+        </div>
+
+        <!-- Public Address -->
+        <div style="background:var(--bg-sub, rgba(255,255,255,0.03)); border:1px solid var(--border-color); border-radius:8px; padding:12px;">
+          <div style="font-size:11px; color:var(--text-sub); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px;">Public EVM Address</div>
+          <div class="mono" id="wm-public-address" style="font-size:13px; color:var(--text-main); word-break:break-all; font-weight:600; margin-bottom:10px;">0x...</div>
+          <div style="display:flex; gap:8px;">
+            <button type="button" class="btn-sub-copy mono" onclick="copyWalletPublicAddress()" style="flex:1; padding:6px; font-size:11px; cursor:pointer;">📋 Copy Address</button>
+            <a id="wm-explorer-link" href="#" target="_blank" class="btn-sub-copy mono" style="flex:1; padding:6px; font-size:11px; text-align:center; text-decoration:none; display:inline-block;">↗️ Abeyscan</a>
+          </div>
+        </div>
+
+        <!-- Shielded ZK Address -->
+        <div style="background:var(--bg-sub, rgba(255,255,255,0.03)); border:1px solid var(--border-color); border-radius:8px; padding:12px;">
+          <div style="font-size:11px; color:var(--text-sub); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px;">Confidential Shielded Address (0msk)</div>
+          <div class="mono" id="wm-shielded-address" style="font-size:12px; color:var(--green-primary); word-break:break-all; margin-bottom:10px;">0msk...</div>
+          <button type="button" class="btn-sub-copy mono" onclick="copyWalletShieldedAddress()" style="width:100%; padding:6px; font-size:11px; cursor:pointer;">📋 Copy Shielded Address</button>
+        </div>
+
+        <!-- Actions -->
+        <div style="display:flex; gap:10px; margin-top:4px;">
+          <button type="button" class="btn-sub-copy mono" onclick="manualSyncVault(); closeWalletModal();" style="flex:1; padding:10px; font-size:12px; cursor:pointer; font-weight:600;">🔄 Sync Vault</button>
+          <button type="button" class="btn-sub-copy mono" onclick="disconnectWallet()" style="flex:1; padding:10px; font-size:12px; cursor:pointer; color:#ef4444; border-color:rgba(239,68,68,0.3); font-weight:600;">🚪 Disconnect</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
   <!-- App Header -->
   <header class="app-topbar">
     <div class="topbar-left">
@@ -92,7 +140,7 @@
       </button>
 
       <!-- Web3 Connect Wallet Badge -->
-      <div class="wallet-badge" id="wallet-badge-btn" onclick="connectWeb3Wallet()" style="cursor: pointer;" title="Connect MetaMask / EVM Wallet (Abey 178)">
+      <div class="wallet-badge" id="wallet-badge-btn" onclick="handleWalletBadgeClick()" style="cursor: pointer;" title="Connect or View Wallet (Abey 178)">
         <span class="wallet-dot" id="wallet-dot"></span>
         <span id="wallet-balance-badge" class="wallet-bal mono" style="display:none; margin-right:8px; font-weight:700; color:var(--green-primary);">0.00 ABEY</span>
         <span class="wallet-addr mono" id="wallet-addr-text">Connect Wallet</span>

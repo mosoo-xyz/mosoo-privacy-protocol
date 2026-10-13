@@ -120,7 +120,95 @@ tabButtons.forEach(btn => {
 });
 
 // --- Web3 Connection Engine ---
-async function connectWeb3Wallet(promptSignature = true) {
+function handleWalletBadgeClick() {
+  if (!currentAccount) {
+    connectWeb3Wallet(false);
+  } else {
+    openWalletModal();
+  }
+}
+
+function openWalletModal() {
+  if (!currentAccount) return;
+  const wmModal = document.getElementById('wallet-modal');
+  if (!wmModal) return;
+
+  const pubEl = document.getElementById('wm-public-address');
+  if (pubEl) pubEl.innerText = currentAccount;
+
+  const expLink = document.getElementById('wm-explorer-link');
+  if (expLink) expLink.href = `${CONFIG.explorerUrl}/address/${currentAccount}`;
+
+  const shEl = document.getElementById('wm-shielded-address');
+  if (shEl) shEl.innerText = userKeys ? userKeys.mosooAddress : 'Generating...';
+
+  wmModal.classList.add('open');
+}
+
+function closeWalletModal() {
+  const wmModal = document.getElementById('wallet-modal');
+  if (wmModal) wmModal.classList.remove('open');
+}
+
+function copyWalletPublicAddress() {
+  if (currentAccount) {
+    navigator.clipboard.writeText(currentAccount).then(() => {
+      showToast('Public address copied!');
+    });
+  }
+}
+
+function copyWalletShieldedAddress() {
+  if (userKeys && userKeys.mosooAddress) {
+    navigator.clipboard.writeText(userKeys.mosooAddress).then(() => {
+      showToast('Shielded address copied!');
+    });
+  }
+}
+
+function disconnectWallet() {
+  currentAccount = null;
+  signer = null;
+  userKeys = null;
+  localStorage.removeItem('mosoo_connected');
+
+  const addrEl = document.getElementById('wallet-addr-text');
+  if (addrEl) addrEl.innerText = 'Connect Wallet';
+
+  const dotEl = document.getElementById('wallet-dot');
+  if (dotEl) {
+    dotEl.style.background = '#666';
+    dotEl.style.boxShadow = 'none';
+  }
+
+  const wBal = document.getElementById('wallet-balance-badge');
+  if (wBal) wBal.style.display = 'none';
+
+  const pcPub = document.getElementById('pc-public-bal');
+  if (pcPub) pcPub.innerText = '0.00 ABEY';
+
+  const pcSh = document.getElementById('pc-shielded-bal');
+  if (pcSh) pcSh.innerText = '$0.00';
+
+  const pcTot = document.getElementById('pc-total-usd');
+  if (pcTot) pcTot.innerText = '$0.00';
+
+  const sideVk = document.getElementById('side-vk');
+  if (sideVk) sideVk.innerText = 'Connect wallet to view';
+
+  const kPub = document.getElementById('k-pub');
+  if (kPub) kPub.value = '';
+
+  const kPriv = document.getElementById('k-priv');
+  if (kPriv) kPriv.value = '';
+
+  renderNotesTable();
+  renderUserActivityTelemetry();
+  closeWalletModal();
+  showToast('Wallet disconnected.');
+}
+
+async function connectWeb3Wallet(promptSignature = false) {
   if (typeof window.ethereum === 'undefined') {
     showToast("MetaMask or compatible EVM wallet not detected!");
     return;
@@ -1130,6 +1218,14 @@ if (btnDoUnshield) {
                 const changeNote = MosooCrypto.createNote(selection.changeAmount.toFixed(4), userKeys ? userKeys.mosooAddress : "0msk1self", 'USDT');
                 changeNote.isChange = true;
                 MosooCrypto.saveNote(currentAccount, changeNote);
+                if (userKeys && userKeys.mosooAddress) {
+                  MosooCrypto.saveSharedNote(userKeys.mosooAddress, changeNote);
+                  fetch(`${CONFIG.relayerUrl}/api/notes/dispatch`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ note: changeNote })
+                  }).catch(() => {});
+                }
               }
             }
           } else {
@@ -1157,6 +1253,14 @@ if (btnDoUnshield) {
                   const changeNote = MosooCrypto.createNote(selection.changeAmount.toFixed(4), userKeys ? userKeys.mosooAddress : "0msk1self", asset);
                   changeNote.isChange = true;
                   MosooCrypto.saveNote(currentAccount, changeNote);
+                  if (userKeys && userKeys.mosooAddress) {
+                    MosooCrypto.saveSharedNote(userKeys.mosooAddress, changeNote);
+                    fetch(`${CONFIG.relayerUrl}/api/notes/dispatch`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ note: changeNote })
+                    }).catch(() => {});
+                  }
                 }
               }
             } else {
@@ -1183,6 +1287,14 @@ if (btnDoUnshield) {
                   const changeNote = MosooCrypto.createNote(selection.changeAmount.toFixed(4), userKeys ? userKeys.mosooAddress : "0msk1self", asset);
                   changeNote.isChange = true;
                   MosooCrypto.saveNote(currentAccount, changeNote);
+                  if (userKeys && userKeys.mosooAddress) {
+                    MosooCrypto.saveSharedNote(userKeys.mosooAddress, changeNote);
+                    fetch(`${CONFIG.relayerUrl}/api/notes/dispatch`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ note: changeNote })
+                    }).catch(() => {});
+                  }
                 }
               }
             }
@@ -1553,8 +1665,25 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
+// Modal Backdrop Clicks & Escape Key Listeners
+const walletModal = document.getElementById('wallet-modal');
+if (walletModal) {
+  walletModal.addEventListener('click', (e) => {
+    if (e.target === walletModal) closeWalletModal();
+  });
+}
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeWalletModal();
+});
+
 // Window Global Exports
 window.connectWeb3Wallet = connectWeb3Wallet;
+window.handleWalletBadgeClick = handleWalletBadgeClick;
+window.openWalletModal = openWalletModal;
+window.closeWalletModal = closeWalletModal;
+window.copyWalletPublicAddress = copyWalletPublicAddress;
+window.copyWalletShieldedAddress = copyWalletShieldedAddress;
+window.disconnectWallet = disconnectWallet;
 window.setQuickAmount = setQuickAmount;
 window.copyViewingKey = copyViewingKey;
 window.togglePrivKey = togglePrivKey;
