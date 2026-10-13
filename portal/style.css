@@ -1209,6 +1209,26 @@ body:not(.theme-dark) .icon-moon { display: inline-block; }
   margin-bottom: 8px;
 }
 .f-col a:hover { color: var(--green-primary); }
+.f-col a.link-disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.f-col a.link-disabled:hover {
+  color: var(--text-muted);
+}
+.tag-soon {
+  font-size: 8.5px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-sub);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-weight: 600;
+  margin-left: 6px;
+  border: 1px solid var(--border);
+  display: inline-block;
+  vertical-align: middle;
+  letter-spacing: 0.3px;
+}
 .footer-bar {
   max-width: 1280px;
   margin: 40px auto 0;
