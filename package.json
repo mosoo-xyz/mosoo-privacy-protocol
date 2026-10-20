@@ -1,25 +1,19 @@
 {
   "name": "mosoo-privacy-protocol",
-  "version": "1.0.0-prototype",
-  "description": "Universal EVM Zero-Knowledge Multi-UTXO Confidential Transaction Protocol Prototype",
-  "main": "prototype/crypto.js",
+  "version": "0.1.0",
+  "description": "Multi-UTXO privacy protocol on EVM using Poseidon hashing and Circom 2.0",
+  "main": "lib/crypto.js",
   "scripts": {
-    "test": "node prototype/prototype_demo.js",
-    "demo": "node prototype/prototype_demo.js",
-    "prototype": "node prototype/prototype_demo.js"
+    "test": "node --test test/protocol.test.js"
   },
   "keywords": [
-    "zero-knowledge",
-    "zk-snarks",
-    "evm",
-    "ethereum",
     "privacy-pool",
-    "poseidon-hash",
-    "confidential-transactions",
+    "zero-knowledge",
+    "evm",
+    "poseidon",
     "utxo",
     "circom"
   ],
-  "author": "MOSOO Protocol",
   "license": "MIT",
   "dependencies": {
     "circomlibjs": "^0.1.7",

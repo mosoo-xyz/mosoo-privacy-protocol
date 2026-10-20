@@ -20,16 +20,11 @@ interface IVerifier {
 
 /**
  * @title MosooPrivacyPool
- * @notice Enterprise Zero-Knowledge Privacy Pool for EVM-Compatible Blockchains
- * @dev Features:
- *   - Multi-UTXO JoinSplit (2-in 2-out and Multi-Unshield)
- *   - On-Chain Encrypted Memos (ECDH Calldata delivery)
- *   - Multi-Token ERC-20 Support (Native gas token & ERC-20 tokens)
- *   - Poseidon Hash + SNARK / Proof Authorization
+ * @notice Multi-UTXO privacy pool with incremental Poseidon Merkle tree
  */
 contract MosooPrivacyPool is MerkleTreeWithHistory {
     string public constant NAME = "Mosoo Privacy Pool";
-    string public constant VERSION = "2.1.0-enterprise";
+    string public constant VERSION = "0.1.0";
     uint256 public immutable CHAIN_ID;
 
     address public owner;
@@ -37,23 +32,17 @@ contract MosooPrivacyPool is MerkleTreeWithHistory {
     address public proofAuthorizer;
     address public verifier;
 
-    // Reentrancy guard
     uint256 private _status;
     uint256 private constant _NOT_ENTERED = 1;
     uint256 private constant _ENTERED = 2;
 
-    // Mapping to track spent nullifiers (prevents double-spending)
     mapping(bytes32 => bool) public nullifierHashes;
-
-    // Multi-token pool liquidity tracking (address(0) = native gas token)
     mapping(address => uint256) public tokenPoolBalances;
 
-    // Metrics for MosooScan Explorer
     uint256 public totalShieldedVolume;
     uint256 public totalUnshieldedVolume;
     uint256 public totalTransactionsCount;
 
-    // Events for Explorer, Relayer & SDK
     event Shield(
         bytes32 indexed commitment,
         uint32 indexed leafIndex,
@@ -150,9 +139,7 @@ contract MosooPrivacyPool is MerkleTreeWithHistory {
         _status = _NOT_ENTERED;
     }
 
-    // ==========================================
-    // 1. SHIELD (NATIVE GAS TOKEN & ERC-20)
-    // ==========================================
+    // Deposit functions
 
     function shield(bytes32 commitment) external payable returns (uint32 leafIndex) {
         return shieldWithMemo(commitment, "");
@@ -192,9 +179,7 @@ contract MosooPrivacyPool is MerkleTreeWithHistory {
         return leafIndex;
     }
 
-    // ==========================================
-    // 2. UNSHIELD (SINGLE & MULTI-UTXO)
-    // ==========================================
+    // Withdrawal functions
 
     function unshield(
         bytes32 root,
@@ -304,9 +289,7 @@ contract MosooPrivacyPool is MerkleTreeWithHistory {
         emit UnshieldToken(token, recipient, nullifierHash, relayer, fee, amount, block.timestamp);
     }
 
-    // ==========================================
-    // 3. TRANSACT (SINGLE & 2-to-2 MULTI-UTXO)
-    // ==========================================
+    // Confidential transfers
 
     function transact(
         bytes32 root,
@@ -398,9 +381,7 @@ contract MosooPrivacyPool is MerkleTreeWithHistory {
         return newLeafIndices;
     }
 
-    // ==========================================
-    // 4. PROOF VERIFICATION ENGINE
-    // ==========================================
+    // Verification logic
 
     function verifyProof(
         bytes32 root,

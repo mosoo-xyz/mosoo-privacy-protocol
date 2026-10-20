@@ -1,9 +1,7 @@
 pragma circom 2.0.0;
 
-/**
- * Mosoo Privacy Protocol - Circom Circuits
- * Core ZK-SNARK Privacy Engine for EVM-Compatible Architectures
- * Implements 2-in 2-out Multi-UTXO Transaction Verification
+/*
+ * Mosoo Privacy Protocol - 2-in 2-out JoinSplit circuit
  */
 
 // Note Commitment: Poseidon(secret, nullifier, amount, recipient)
