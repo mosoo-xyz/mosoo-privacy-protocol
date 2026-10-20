@@ -2,7 +2,7 @@ pragma circom 2.0.0;
 
 /**
  * Mosoo Privacy Protocol - Circom Circuits
- * Core ZK-SNARK Privacy Engine for Abey Chain (Chain ID: 178)
+ * Core ZK-SNARK Privacy Engine for EVM-Compatible Architectures
  * Implements 2-in 2-out Multi-UTXO Transaction Verification
  */
 

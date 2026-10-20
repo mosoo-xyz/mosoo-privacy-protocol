@@ -1,177 +1,232 @@
 # 🛡️ Mosoo Privacy Protocol
 
-[![Network: AbeyChain Testnet](https://img.shields.io/badge/Network-AbeyChain%20(Chain%20178)-059669?style=flat-square)](https://testnet.abeyscan.com)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
-[![ZK Primitive: Poseidon BN254](https://img.shields.io/badge/ZK%20Circuit-Poseidon%20BN254-8b5cf6?style=flat-square)](https://github.com/mosoo-xyz/mosoo-privacy-protocol)
-[![Status: Production Testnet Live](https://img.shields.io/badge/Status-Production%20Testnet%20Live-10b981?style=flat-square)](https://app.mosoo.xyz)
+[![EVM Compatible](https://img.shields.io/badge/Architecture-EVM%20Compatible-blue.svg?style=flat-square)](contracts/MosooPrivacyPool.sol)
+[![ZK Primitive: Poseidon BN254](https://img.shields.io/badge/ZK%20Primitive-Poseidon%20BN254-8b5cf6?style=flat-square)](prototype/crypto.js)
+[![Circuit: Circom 2.0](https://img.shields.io/badge/Circuit-Circom%202.0%20(2--to--2)-orange?style=flat-square)](contracts/circuits/transaction.circom)
+[![Prototype: Verified](https://img.shields.io/badge/Prototype-100%25%20Verified%20(npm%20test)-10b981?style=flat-square)](prototype/prototype_demo.js)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
 
-> **Enterprise Zero-Knowledge Privacy Pool and Multi-UTXO Confidential Transaction Layer on AbeyChain.**  
-> Built for the **Abey Foundation Grant Program**.
-
----
-
-## 🌐 Live Protocol Deployments
-
-| Component | Production Endpoint | Network |
-| :--- | :--- | :--- |
-| **Landing Portal** | [https://mosoo.xyz](https://mosoo.xyz) | Web |
-| **Privacy Cockpit DApp** | [https://app.mosoo.xyz](https://app.mosoo.xyz) | Web3 Terminal |
-| **MosooScan Explorer** | [https://explorer.mosoo.xyz](https://explorer.mosoo.xyz) | On-Chain ZK Stream |
-| **Relayer RPC Node** | [https://rpc.mosoo.xyz/health](https://rpc.mosoo.xyz/health) | Abey Testnet Daemon |
-| **Main Pool Contract** | [`0x3aa5aA8Fc12b4C589300638522F0ea9A783305Eb`](https://testnet.abeyscan.com/address/0x3aa5aA8Fc12b4C589300638522F0ea9A783305Eb) | Abey Testnet (178) |
-| **Poseidon Verifier** | [`0x91f303F459ecB99CF24efaea79bc57d9C0fc9A9e`](https://testnet.abeyscan.com/address/0x91f303F459ecB99CF24efaea79bc57d9C0fc9A9e) | Abey Testnet (178) |
-| **Mock USDT Token** | [`0xeF89C5b126f90Fb728A022bc77377d793dCD22CB`](https://testnet.abeyscan.com/address/0xeF89C5b126f90Fb728A022bc77377d793dCD22CB) | Abey Testnet (178) |
+> **Universal EVM Zero-Knowledge Multi-UTXO Confidential Transaction Protocol (Working Prototype).**  
+> Enables arbitrary-amount confidential transfers, dual-key stealth identities, and forward-secret on-chain encrypted memos across any EVM-compatible chain.
 
 ---
 
-## 📌 Executive Summary
+## 📌 Protocol Overview
 
-While **AbeyChain** delivers high-throughput, scalable Layer-1 infrastructure, public on-chain ledger transparency leaves user balances and transaction trails exposed. This limits institutional adoption, confidential B2B transactions, payroll settlements, and MEV-resistant trading.
+Public EVM blockchains broadcast transaction graphs, account balances, and recipient addresses in plaintext. While essential for global consensus, this transparency presents severe challenges for institutional settlements, payroll distribution, private treasury management, and MEV frontrunning resistance.
 
-**Mosoo Privacy Protocol** solves this by establishing a non-custodial, zero-knowledge privacy pool on AbeyChain. Utilizing SNARK-friendly **Poseidon hashing**, **Multi-UTXO JoinSplit circuits (2-in 2-out)**, and **ECDH encrypted note memos**, Mosoo enables users to deposit public tokens, privately transact with zero address linkage, and withdraw cleanly to fresh recipient addresses.
+Traditional privacy pools suffer from a major limitation: they restrict users to **fixed denominations** (e.g., exactly 0.1, 1, or 10 ETH), which fragments liquidity and prevents everyday arbitrary payments.
+
+**Mosoo Privacy Protocol** introduces a non-custodial, chain-agnostic **Multi-UTXO Zero-Knowledge Privacy Pool**:
+- **Arbitrary Amount JoinSplit:** Spend multiple input notes and produce recipient + change output notes ($In_1 + In_2 = Out_1 + Out_2 + Fee$), eliminating fixed-denomination constraints.
+- **Dual-Key Stealth Identities:** Users derive deterministic Spending and Viewing keys, generating stealth addresses (`0msk1...`) that break public address linkage.
+- **Asymmetric Calldata Memo Delivery:** Note preimages are encrypted via **ECDH (Elliptic Curve Diffie-Hellman)** and published directly in transaction calldata, allowing recipients to discover incoming funds without trusting centralized servers.
+- **Poseidon-BN254 Incremental Merkle Trees:** High-throughput on-chain cryptographic tree with a 64-slot historical root buffer to prevent frontrunning and race conditions.
 
 ---
 
-## 📐 Protocol Architecture & Transaction Flow
+## 📐 How It Works (Architecture & Flow)
 
 ```
-[ Public L1 Wallet (MetaMask) ]
-              │
-              ▼  (1) SHIELD DEPOSIT
+[ Public EVM Wallet ]
+         │
+         ▼  (1) SHIELD (DEPOSIT)
 ┌────────────────────────────────────────────────────────┐
 │               MosooPrivacyPool.sol                     │
+│  - Native Gas Token (ETH) & ERC-20 Support             │
 │  - Poseidon-BN254 Incremental Merkle Tree (Depth 20)  │
 │  - 64-Slot Historical Merkle Roots Ring Buffer         │
-│  - Multi-Token Vaults (Native ABEY & ERC-20 mUSDT)     │
 └────────────────────────────────────────────────────────┘
-              │
-              ▼  (2) OFF-CHAIN SHIELDED STATE
+         │
+         ▼  (2) OFF-CHAIN SHIELDED STATE TRANSITION
 ┌────────────────────────────────────────────────────────┐
-│           Confidential Multi-UTXO Ledger               │
-│  - Client-Side Secp256k1 Scanning & Viewing Keys      │
-│  - JoinSplit 2-in 2-out (Merge & Change Note Splits)   │
-│  - End-to-End ECDH Encrypted Calldata Delivery         │
+│            Confidential Multi-UTXO Engine              │
+│  - Client generates 2-in 2-out JoinSplit proof         │
+│  - Nullifier 1 & 2 generated to mark notes spent       │
+│  - Note A (Payment to Bob) + Note B (Alice Change)     │
+│  - Value Invariant: Σ Inputs == Σ Outputs + Fee        │
 └────────────────────────────────────────────────────────┘
-              │
-              ▼  (3) ANONYMOUS BROADCASTER
+         │
+         ▼  (3) ENCRYPTED CALLDATA DELIVERY
 ┌────────────────────────────────────────────────────────┐
-│             Hardened Relayer Network                   │
-│  - Pre-Flight On-Chain Simulation (staticCall)         │
-│  - Anti-Replay In-Memory Nullifier Locks               │
-│  - Reverse-Proxy IP Rate Limiting & Malicious Auto-Ban │
+│            Forward-Secret ECDH Calldata Memo           │
+│  - Sender derives shared secret with Bob's Viewing PubKey
+│  - AES-256-GCM encrypts note ciphertext into tx memo   │
+│  - Bob scans blockchain logs & decrypts note privately │
 └────────────────────────────────────────────────────────┘
-              │
-              ▼  (4) CLEAN UNSHIELD (WITHDRAWAL)
-[ Fresh Unlinked Public EVM Address (Zero Historical Trace) ]
+         │
+         ▼  (4) UNSHIELD (CONFIDENTIAL WITHDRAWAL)
+┌────────────────────────────────────────────────────────┐
+│            Clean Recipient Public EVM Address          │
+│  - On-chain nullifier registration prevents replay     │
+│  - Zero address linkage between depositor and recipient│
+└────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🔑 Core Technical Highlights
+## 🔑 Technical Specification
 
-### 1. Multi-UTXO JoinSplit Engine (2-to-2)
-Unlike early privacy pools that only support fixed-denomination notes, Mosoo features arbitrary-amount note handling:
-- **Join:** Merge two existing shielded notes into a single payment.
-- **Split:** Automatically generate a payment note for the recipient and a change note returned to the sender.
+### 1. Dual-Key Stealth Derivation
+From an initial entropy seed (or Web3 wallet signature), Mosoo derives two cryptographically isolated keypairs:
+- **Spending Key ($sk_{spend}$):** Authorizes spending of UTXO commitments and generates nullifier preimages.
+- **Viewing Key ($sk_{view}$):** Used exclusively to decrypt incoming transactions without granting authority to spend.
+- **Public Viewing Key ($pk_{view}$):** Compressed 33-byte secp256k1 public key used by senders to encrypt note preimages.
+- **Stealth Identifier (`0msk1...`):** Self-contained identifier containing the encoded public viewing key.
 
-### 2. Poseidon-BN254 Merkle Tree
-- Circuit-optimized algebraic hash function operating over the BN254 scalar field ($p \approx 2^{253.5}$).
-- 20-depth incremental binary tree supporting over **1,048,576 notes**.
-- 64-slot ring buffer cache for historical roots to prevent race conditions during concurrent transactions.
+### 2. Note Commitment & Nullifier Hashes
+Notes are modeled as UTXOs committed to an on-chain binary Merkle tree over the BN254 scalar field:
 
-### 3. End-to-End Encrypted Memos (ECDH Calldata)
-- Senders encrypt recipient note metadata using the recipient's public viewing key via **ECDH (Elliptic Curve Diffie-Hellman)**.
-- Ciphertext is committed to transaction calldata (`encryptedMemo`).
-- Recipients scan on-chain event logs with their secret viewing key to reconstruct balances without trusting centralized indexers.
+$$\text{Commitment} = \text{Poseidon}_4(\text{secret}, \text{nullifier}, \text{amount}, \text{recipientHash})$$
 
-### 4. Hardened Relayer Infrastructure
-- **CORS Protection & Whitelisting:** Restricts API access to authorized frontend origins.
-- **Pre-Flight Static Simulation:** Executes `staticCall` prior to on-chain broadcast, ensuring zero gas waste on invalid submissions.
-- **Mempool Concurrency Guard:** Locks `pendingNullifiers` to eliminate frontrunning and replay attempts.
-- **Fail-Fast Secret Isolation:** Private keys are isolated in server environment variables and never exposed to client applications.
+$$\text{NullifierHash} = \text{Poseidon}_2(\text{nullifier}, 0)$$
+
+- `secret`: 248-bit cryptographically secure random value known only to the note owner.
+- `nullifier`: 248-bit unique blinding value revealed as `nullifierHash` when the note is spent.
+- Double-spending is prevented because the smart contract maintains a registry `mapping(bytes32 => bool) public nullifierHashes`. Re-submitting an existing nullifier reverts the transaction.
+
+### 3. Multi-UTXO JoinSplit Circuit (2-in 2-out)
+The Circom ZK circuit proves the following statements in Zero Knowledge:
+1. Both input notes exist in the Merkle tree at some valid historical root:
+   $$\text{MerkleVerify}(\text{leaf}_1, \text{path}_1, \text{root}) == 1 \quad \wedge \quad \text{MerkleVerify}(\text{leaf}_2, \text{path}_2, \text{root}) == 1$$
+2. The nullifiers correctly correspond to the input commitments.
+3. The sum of input values equals the sum of output values plus the relayer fee:
+   $$\text{amount}_{in, 1} + \text{amount}_{in, 2} == \text{amount}_{out, 1} + \text{amount}_{out, 2} + \text{fee}$$
+4. All values fit within the 64-bit unsigned integer range (preventing field-overflow exploits).
+
+### 4. End-to-End Calldata Memo Delivery
+To allow recipients to discover and restore their shielded balances without needing a centralized backend:
+1. Sender creates an ephemeral keypair: $(sk_{eph}, pk_{eph})$.
+2. Computes the ECDH shared secret: $S = sk_{eph} \times pk_{view, recipient}$.
+3. Encrypts note parameters with AES-256-GCM using $K = \text{Keccak256}(S)$.
+4. Calldata format: $[pk_{eph} \ (33B)] + [IV \ (12B)] + [\text{AuthTag} \ (16B)] + [\text{Ciphertext}]$.
+5. Recipients scan contract event logs and decrypt only memos addressed to them. Third-party observers learn zero information.
 
 ---
 
-## 📂 Project Repository Structure
+## 📂 Repository Structure
 
 ```
 mosoo-privacy-protocol/
-├── app/                  # Web3 Privacy Cockpit DApp (app.mosoo.xyz)
-│   ├── index.html        # Cockpit UI Layout & Terminal
-│   ├── script.js         # Core DApp controller & wallet integration
-│   ├── mosoo-crypto.js   # Client-side Secp256k1 key derivation & ECDH crypto
-│   ├── poseidon-lite.js  # BN254 Poseidon hash library
-│   └── style.css         # Cyber-terminal stylesheet
-├── contracts/            # Smart Contracts Layer
-│   ├── MosooPrivacyPool.sol       # Core Pool (Shield, Unshield, JoinSplit 2-to-2)
+├── contracts/
+│   ├── MosooPrivacyPool.sol       # Core EVM Privacy Pool (dynamic chainId, Shield, Unshield, JoinSplit)
 │   ├── MerkleTreeWithHistory.sol  # 20-Depth Poseidon Tree & 64-Root Ring Buffer
-│   ├── MockUSDT.sol               # Multi-token test asset
-│   └── circuits/                  # Circom zero-knowledge circuit definitions
-│       └── transaction.circom     # JoinSplit constraint circuit
-├── explorer/             # MosooScan Real-Time ZK Block Explorer (explorer.mosoo.xyz)
-│   ├── index.html        # Explorer layout
-│   └── script.js         # Real-time on-chain event stream parser
-├── portal/               # Institutional Landing Page (mosoo.xyz)
-│   ├── index.html        # Main landing portal
-│   ├── how-it-works.html # Architectural walkthrough
-│   ├── security.html     # Security model & audit disclosures
-│   └── ecosystem.html    # AbeyChain ecosystem integrations
-├── relayer/              # Hardened Broadcaster Daemon (rpc.mosoo.xyz)
-│   ├── server.js         # Express + Ethers.js relayer daemon
-│   └── package.json      # Relayer dependencies
-├── deployment.json       # On-chain contract registry (Chain ID: 178)
-└── mock_usdt.json        # Testnet ERC-20 configuration
+│   ├── MockERC20.sol              # Standard ERC-20 token for multi-asset pool testing
+│   └── circuits/
+│       └── transaction.circom     # Circom 2.0 JoinSplit 2-to-2 constraint verification circuit
+├── prototype/
+│   ├── prototype_demo.js          # Executable end-to-end cryptographic prototype demo
+│   ├── crypto.js                  # Poseidon-BN254, stealth key derivation & ECDH memo engine
+│   └── merkle_tree.js             # Incremental Poseidon Merkle tree (matching smart contract)
+├── package.json                   # Project metadata and test commands
+├── LICENSE                        # MIT License
+└── README.md                      # Architecture and protocol specification
 ```
 
 ---
 
-## 🔒 Security & Audit Highlights
+## 🚀 Running the Working Prototype Locally
 
-A comprehensive defense-in-depth audit was conducted across all protocol layers:
-- **Checks-Effects-Interactions (CEI):** Nullifier hashes are marked spent before external value transfers.
-- **Reentrancy Protection:** All state-modifying endpoints utilize `nonReentrant` mutex guards.
-- **Scalar Field Boundary Enforcement:** All deposit commitments are verified to satisfy `uint256(commitment) < FIELD_SIZE`.
-- **Client Sanitization:** Explorer search inputs feature strict HTML entity encoding, preventing DOM XSS vulnerabilities.
-- **Credential Isolation:** Relayer private keys are strictly managed via environment variables with immediate startup validation.
+The prototype simulation executes the complete cryptographic pipeline end-to-end:
+- Generates Alice, Bob, and Eve stealth accounts
+- Shields 5.0 ETH and 3.0 ETH into Poseidon commitments
+- Inserts notes into a 20-depth incremental Poseidon Merkle tree
+- Computes Merkle membership proofs
+- Executes a JoinSplit 2-to-2 transfer (6.5 ETH to Bob, 1.49 ETH change to Alice, 0.01 ETH fee)
+- Encrypts note calldata memo with forward-secret ECDH
+- Simulates Bob's decentralized log scanning and successful recovery
+- Verifies adversary (Eve) cannot decrypt the memo (zero knowledge leaked)
+- Performs unshielding to a clean public EVM address
+- Asserts that double-spend replay attempts are rejected
+
+### Quickstart
+
+```bash
+# 1. Clone repository
+git clone https://github.com/mosoo-xyz/mosoo-privacy-protocol.git
+cd mosoo-privacy-protocol
+
+# 2. Install dependencies
+npm install
+
+# 3. Run prototype demonstration
+npm test
+```
+
+*(You can also run `npm run demo`)*
+
+### Expected Output
+
+```
+================================================================================
+  MOSOO PRIVACY PROTOCOL - ZERO-KNOWLEDGE PROTOTYPE SIMULATION
+================================================================================
+  Specification: Universal EVM Multi-UTXO Privacy Layer
+  Curve: BN254 (alt_bn128) | Hasher: Poseidon (t=3, t=5) | Merkle Depth: 20
+
+[STEP 1] Cryptographic Stealth Identity Derivation
+  Deriving spending keys, viewing keys, and secp256k1 public viewing keys...
+    • Alice Stealth Address: 0msk102f3ef27624db64a07750e54fbb6bdc3c0e1c248489037aec89a228f99dc222d73
+    • Bob Stealth Address  : 0msk102f07c433bc781aab6299f764c4d570dfbd9580551277e5e72525f2a3f1cf9618a
+    • Eve Stealth Address  : 0msk102b464873cd25e05d2a1472b68d9ab431b79a6e163b2e24b09414acfedc1aa92ac
+  ✔ Dual-key stealth identity pairs derived successfully.
+
+[STEP 2] Asset Shielding & Poseidon Note Commitments
+  Alice deposits funds into the EVM Privacy Pool:
+  - Note 1: 5.00 ETH
+  - Note 2: 3.00 ETH
+  ✔ Notes committed to 20-depth Poseidon Merkle Tree.
+  ✔ Zero-Knowledge Merkle membership proof verified for Note 1.
+
+[STEP 3] Multi-UTXO JoinSplit 2-to-2 Confidential Transfer
+  Alice initiates an arbitrary confidential transfer to Bob:
+  - Target Payment to Bob: 6.50 ETH
+  - Relayer Gas Fee:       0.01 ETH
+  - Change back to Alice:  1.49 ETH
+  ✔ JoinSplit balance conservation validated: 5.0 + 3.0 == 6.5 + 1.49 + 0.01 ETH
+  ✔ Input nullifiers marked spent.
+  ✔ Tree updated with Output UTXO A and Output UTXO B.
+
+[STEP 4] Asymmetric Calldata Memo Encryption (ECDH + AES-256-GCM)
+  ✔ Encrypted memo generated with forward-secret ephemeral secp256k1 key.
+
+[STEP 5] Decentralized Note Scanning & Privacy Verification
+  ✔ Bob successfully decrypted incoming note: 6.5 ETH!
+  ✔ Adversary decryption returned null: ZERO knowledge leaked to blockchain observers.
+
+[STEP 6] Confidential Unshielding (Withdrawal to Public Address)
+  ✔ Unshield verified on Merkle Root.
+  ✔ Nullifier registered on-chain.
+  ✔ Funds dispatched to recipient: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+
+[STEP 7] Double-Spend Attack Prevention Test
+  ✔ Double-spend attack thwarted: "MosooPrivacyPool: Nullifier already spent (revert)"
+
+================================================================================
+  PROTOTYPE TEST EXECUTION COMPLETE
+================================================================================
+  All Invariants Verified:
+    [✔] Dual-Key Stealth Address Derivation
+    [✔] Poseidon-BN254 Hash & 20-Depth Merkle Commitments
+    [✔] Multi-UTXO JoinSplit 2-in 2-out Arbitrary Transfer
+    [✔] ECDH Forward-Secret Calldata Memo Delivery
+    [✔] Zero-Knowledge Confidentiality (Eve decryption rejected)
+    [✔] Cryptographic Anti-Double-Spend Assertion
+================================================================================
+```
 
 ---
 
-## 🗺️ Grant Roadmap & Next Steps
+## ⚙️ Smart Contract Specifications
 
-Supported by the **Abey Foundation Grant Program**, Mosoo will advance across three major phases:
-
-- [x] **Phase 1: Testnet Launch (Completed)**
-  - Core privacy pool deployed on Abey Testnet (Chain ID 178)
-  - Native ABEY & ERC-20 mUSDT support
-  - Web3 Privacy Terminal & MosooScan Explorer live
-- [ ] **Phase 2: Mainnet Launch & Security Audit**
-  - Institutional 3rd-party audit (CertiK / OpenZeppelin standard)
-  - Deployment of immutable contracts on AbeyChain Mainnet
-  - Relayer network Dockerization and decentralized node cluster
-- [ ] **Phase 3: Confidential AMM DEX Routing & Proof of Innocence (PoI 2.0)**
-  - Atomic swap integration with AbeyChain DEX AMM routers
-  - Zero-knowledge dual-proof compliance architecture (PoI 2.0)
-
----
-
-## 👥 Core Team
-
-| Name | Role | Focus Areas |
-| :--- | :--- | :--- |
-| **Omkar Chavan** | Founder & Lead Protocol Architect | Smart Contracts, ZK Circuits (Circom/SnarkJS), Cryptographic Primitives, AbeyChain Integration |
-| **Sourabh Kumbhar** | Core Technical Engineer | Relayer Systems, Backend Concurrency, Docker Node DevOps, Automated Testing Pipelines |
-| **Indrajeet Yadav** | UI/UX Designer & Frontend Tech Lead | Design System, Web3 Terminal UX, Mobile Responsive Architecture, Brand Identity |
-
----
-
-## 📬 Contact & Inquiries
-
-- **Official Inquiries:** [contact@mosoo.xyz](mailto:contact@mosoo.xyz)
-- **Website:** [https://mosoo.xyz](https://mosoo.xyz)
-- **GitHub:** [https://github.com/mosoo-xyz/mosoo-privacy-protocol](https://github.com/mosoo-xyz/mosoo-privacy-protocol)
+`contracts/MosooPrivacyPool.sol` is designed for universal EVM compatibility:
+- **Dynamic Chain ID:** Retrieves `block.chainid` during construction (`uint256 public immutable CHAIN_ID`), avoiding hardcoded network restrictions. Deployable without code changes to Ethereum Mainnet, Arbitrum, Optimism, Base, Polygon, Avalanche, BNB Chain, or any custom EVM subnet.
+- **Checks-Effects-Interactions (CEI):** Nullifiers are written to storage *before* transferring any ETH or ERC-20 tokens.
+- **Reentrancy Protection:** All external state transitions are guarded by `nonReentrant` status flags.
+- **Scalar Field Boundary Check:** All commitment inputs are strictly validated against `uint256(commitment) < FIELD_SIZE` ($21888242871839275222246405745257275088548364400416034343698204186575808495617$) to prevent BN254 field aliasing.
 
 ---
 
 ## 📄 License
 
-This project is licensed under the [MIT License](LICENSE).
+This repository is licensed under the [MIT License](LICENSE).

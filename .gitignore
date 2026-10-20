@@ -20,6 +20,8 @@ scripts/
 # Build / Tmp / Local Business Artifacts
 build/
 docs/
+tools/
+*.zip
 
 # OS and Editor Artifacts
 .DS_Store

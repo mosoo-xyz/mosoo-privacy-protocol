@@ -2,13 +2,13 @@
 pragma solidity ^0.8.20;
 
 /**
- * @title MockUSDT
- * @notice Standard ERC-20 Tether USD token for Abey Testnet testing
+ * @title MockERC20
+ * @notice Standard ERC-20 token for local testing and prototype demonstration
  */
-contract MockUSDT {
-    string public name = "Tether USD (Testnet)";
-    string public symbol = "USDT";
-    uint8 public decimals = 6;
+contract MockERC20 {
+    string public name = "Mock ERC20 Token";
+    string public symbol = "MOCK";
+    uint8 public decimals = 18;
     uint256 public totalSupply;
 
     mapping(address => uint256) public balanceOf;
@@ -18,7 +18,7 @@ contract MockUSDT {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 
     constructor() {
-        _mint(msg.sender, 1_000_000 * 10**6);
+        _mint(msg.sender, 1_000_000 * 10**18);
     }
 
     function transfer(address to, uint256 amount) external returns (bool) {

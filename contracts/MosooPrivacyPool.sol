@@ -20,17 +20,17 @@ interface IVerifier {
 
 /**
  * @title MosooPrivacyPool
- * @notice Enterprise Zero-Knowledge Privacy Pool on AbeyChain (Chain ID: 178)
+ * @notice Enterprise Zero-Knowledge Privacy Pool for EVM-Compatible Blockchains
  * @dev Features:
  *   - Multi-UTXO JoinSplit (2-in 2-out and Multi-Unshield)
  *   - On-Chain Encrypted Memos (ECDH Calldata delivery)
- *   - Multi-Token ERC-20 Support (ABEY, mUSDT, mUSD)
+ *   - Multi-Token ERC-20 Support (Native gas token & ERC-20 tokens)
  *   - Poseidon Hash + SNARK / Proof Authorization
  */
 contract MosooPrivacyPool is MerkleTreeWithHistory {
     string public constant NAME = "Mosoo Privacy Pool";
     string public constant VERSION = "2.1.0-enterprise";
-    uint256 public constant CHAIN_ID = 178;
+    uint256 public immutable CHAIN_ID;
 
     address public owner;
     bool public paused;
@@ -45,7 +45,7 @@ contract MosooPrivacyPool is MerkleTreeWithHistory {
     // Mapping to track spent nullifiers (prevents double-spending)
     mapping(bytes32 => bool) public nullifierHashes;
 
-    // Multi-token pool liquidity tracking (address(0) = native ABEY)
+    // Multi-token pool liquidity tracking (address(0) = native gas token)
     mapping(address => uint256) public tokenPoolBalances;
 
     // Metrics for MosooScan Explorer
@@ -146,11 +146,12 @@ contract MosooPrivacyPool is MerkleTreeWithHistory {
         require(_proofAuthorizer != address(0), "Mosoo: authorizer is zero address");
         owner = msg.sender;
         proofAuthorizer = _proofAuthorizer;
+        CHAIN_ID = block.chainid;
         _status = _NOT_ENTERED;
     }
 
     // ==========================================
-    // 1. SHIELD (NATIVE ABEY & ERC-20)
+    // 1. SHIELD (NATIVE GAS TOKEN & ERC-20)
     // ==========================================
 
     function shield(bytes32 commitment) external payable returns (uint32 leafIndex) {

@@ -1,27 +1,28 @@
 {
   "name": "mosoo-privacy-protocol",
-  "version": "2.1.0-enterprise",
-  "description": "Enterprise Zero-Knowledge Privacy Pool and Multi-UTXO Confidential Layer on AbeyChain",
-  "main": "index.js",
+  "version": "1.0.0-prototype",
+  "description": "Universal EVM Zero-Knowledge Multi-UTXO Confidential Transaction Protocol Prototype",
+  "main": "prototype/crypto.js",
   "scripts": {
-    "test": "node scripts/test_p1_full_flow.js",
-    "relayer": "node relayer/server.js"
+    "test": "node prototype/prototype_demo.js",
+    "demo": "node prototype/prototype_demo.js",
+    "prototype": "node prototype/prototype_demo.js"
   },
   "keywords": [
-    "abeychain",
     "zero-knowledge",
     "zk-snarks",
+    "evm",
+    "ethereum",
     "privacy-pool",
     "poseidon-hash",
     "confidential-transactions",
     "utxo",
-    "abey-grant"
+    "circom"
   ],
-  "author": "MOSOO Core Team",
+  "author": "MOSOO Protocol",
   "license": "MIT",
   "dependencies": {
     "circomlibjs": "^0.1.7",
-    "dotenv": "^18.0.5",
     "ethers": "^6.17.0",
     "poseidon-lite": "^0.3.0",
     "snarkjs": "^0.7.6",
