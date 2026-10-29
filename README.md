@@ -36,12 +36,13 @@ Each user derives two keypairs from entropy:
 
 Shielded notes are represented as Pedersen/Poseidon commitments on BN254:
 
-$$\text{Commitment} = \text{Poseidon}_4(\text{secret}, \text{nullifier}, \text{amount}, \text{recipientHash})$$
+$$\text{Commitment} = \text{Poseidon}_5(\text{secret}, \text{nullifier}, \text{amount}, \text{assetAddress}, \text{recipientHash})$$
 
 $$\text{NullifierHash} = \text{Poseidon}_2(\text{nullifier}, 0)$$
 
 - `secret`: 248-bit blinding factor known only to note owner.
 - `nullifier`: 248-bit unique value revealed upon spending.
+- `assetAddress`: Bound directly into the commitment (`0x000...000` for native ETH; contract address for ERC-20 tokens) preventing cross-asset theft.
 - The contract records spent nullifier hashes in `mapping(bytes32 => bool) public nullifierHashes`. Any attempt to replay a spent nullifier reverts.
 
 ### 3. Merkle Tree Design
@@ -120,9 +121,12 @@ Test runner uses Node.js native `node:test` and `node:assert/strict`.
 ## Smart Contract Details
 
 - **Chain Agnostic:** Dynamically queries `block.chainid` at deployment (`uint256 public immutable CHAIN_ID`), allowing direct deployment across Ethereum, Arbitrum, Base, Optimism, Polygon, or other EVM environments.
+- **Cross-Asset Isolation:** Binds token contract address into the verification proof, preventing arbitrary token draining across pooled assets.
+- **Strict Value Matching:** Enforces exact fee equality (`msg.value == fee`) on confidential transfers, preventing over-payment fund locking.
+- **Malleability Defense:** Restricts ECDSA signatures to standard lower-half $s$-space ($s \le 0x7FFFFFFF...$) and valid $v$ parity flags ($v \in \{27, 28\}$).
 - **Reentrancy Protection:** All external state transitions enforce non-reentrancy guards.
 - **State Ordering (CEI):** Nullifiers are marked spent prior to token or ether dispatches.
-- **Scalar Field Validation:** Deposits and commitments verify $\text{commitment} < p$ where $p = 21888242871839275222246405745257275088548364400416034343698204186575808495617$.
+- **Scalar Field Validation:** Deposits and commitments verify $\text{commitment} < p$ where $p = 21888242871839275222246405745257275088548364400416034343698204186575808495617$. Multi-nullifier batch hashes are strictly reduced modulo $p$.
 
 ---
 

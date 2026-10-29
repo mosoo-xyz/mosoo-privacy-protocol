@@ -36,6 +36,26 @@ describe('Mosoo Privacy Protocol Specification Tests', () => {
         assert.strictEqual(note.spent, false);
     });
 
+    it('enforces cross-asset commitment isolation to prevent token draining', () => {
+        const ethNote = createNote({
+            amount: '10.0',
+            asset: 'ETH',
+            recipient: '0msk1alice'
+        });
+
+        const tokenAddress = '0x1111111111111111111111111111111111111111';
+        const erc20Note = createNote({
+            amount: '10.0',
+            asset: tokenAddress,
+            recipient: '0msk1alice'
+        });
+
+        // Notes with different asset addresses must have different commitments
+        assert.notStrictEqual(ethNote.commitment, erc20Note.commitment);
+        assert.strictEqual(ethNote.assetAddress, ethers.ZeroAddress);
+        assert.strictEqual(erc20Note.assetAddress, tokenAddress);
+    });
+
     it('inserts notes into incremental Merkle tree and verifies membership proofs', () => {
         const tree = new IncrementalMerkleTree(20);
         const note = createNote({ amount: '5.0', recipient: '0msk1alice' });
