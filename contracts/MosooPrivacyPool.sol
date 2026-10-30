@@ -18,6 +18,22 @@ interface IVerifier {
     ) external view returns (bool);
 }
 
+library SafeERC20 {
+    function safeTransfer(address token, address to, uint256 value) internal {
+        (bool success, bytes memory data) = token.call(
+            abi.encodeWithSelector(IERC20.transfer.selector, to, value)
+        );
+        require(success && (data.length == 0 || abi.decode(data, (bool))), "Mosoo: token transfer failed");
+    }
+
+    function safeTransferFrom(address token, address from, address to, uint256 value) internal {
+        (bool success, bytes memory data) = token.call(
+            abi.encodeWithSelector(IERC20.transferFrom.selector, from, to, value)
+        );
+        require(success && (data.length == 0 || abi.decode(data, (bool))), "Mosoo: token transferFrom failed");
+    }
+}
+
 /**
  * @title MosooPrivacyPool
  * @notice Multi-UTXO privacy pool with incremental Poseidon Merkle tree
@@ -28,6 +44,7 @@ contract MosooPrivacyPool is MerkleTreeWithHistory {
     uint256 public immutable CHAIN_ID;
 
     address public owner;
+    address public pendingOwner;
     bool public paused;
     address public proofAuthorizer;
     address public verifier;
@@ -110,6 +127,7 @@ contract MosooPrivacyPool is MerkleTreeWithHistory {
         uint256 timestamp
     );
 
+    event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event ProofAuthorizerUpdated(address indexed previousAuthorizer, address indexed newAuthorizer);
     event VerifierUpdated(address indexed previousVerifier, address indexed newVerifier);
@@ -168,7 +186,7 @@ contract MosooPrivacyPool is MerkleTreeWithHistory {
         require(amount > 0, "Mosoo: deposit amount must be greater than 0");
         require(uint256(commitment) < FIELD_SIZE, "Mosoo: commitment outside field");
 
-        require(IERC20(token).transferFrom(msg.sender, address(this), amount), "Mosoo: token transfer failed");
+        SafeERC20.safeTransferFrom(token, msg.sender, address(this), amount);
 
         leafIndex = _insert(commitment);
         tokenPoolBalances[token] += amount;
@@ -191,9 +209,10 @@ contract MosooPrivacyPool is MerkleTreeWithHistory {
     ) external whenNotPaused nonReentrant {
         require(recipient != address(0), "Mosoo: recipient is zero address");
         require(fee <= amount, "Mosoo: fee exceeds amount");
+        require(relayer != address(0) || fee == 0, "Mosoo: fee requires relayer");
         require(!nullifierHashes[nullifierHash], "Mosoo: note has already been spent");
         require(isKnownRoot(root), "Mosoo: unknown or expired Merkle root");
-        require(address(this).balance >= amount, "Mosoo: insufficient pool liquidity");
+        require(tokenPoolBalances[address(0)] >= amount, "Mosoo: insufficient pool liquidity");
 
         require(verifyProof(address(0), root, nullifierHash, amount, recipient, relayer, fee, proof), "Mosoo: invalid or unauthorized proof");
 
@@ -225,9 +244,10 @@ contract MosooPrivacyPool is MerkleTreeWithHistory {
     ) external whenNotPaused nonReentrant {
         require(recipient != address(0), "Mosoo: recipient is zero address");
         require(fee <= amount, "Mosoo: fee exceeds amount");
+        require(relayer != address(0) || fee == 0, "Mosoo: fee requires relayer");
         require(inputNullifiers.length > 0 && inputNullifiers.length <= 8, "Mosoo: invalid nullifiers count");
         require(isKnownRoot(root), "Mosoo: unknown or expired Merkle root");
-        require(address(this).balance >= amount, "Mosoo: insufficient pool liquidity");
+        require(tokenPoolBalances[address(0)] >= amount, "Mosoo: insufficient pool liquidity");
 
         bytes32 nullifiersBatchHash = bytes32(uint256(keccak256(abi.encodePacked(inputNullifiers))) % FIELD_SIZE);
         require(verifyProof(address(0), root, nullifiersBatchHash, amount, recipient, relayer, fee, proof), "Mosoo: invalid multi-unshield proof");
@@ -268,6 +288,7 @@ contract MosooPrivacyPool is MerkleTreeWithHistory {
         require(token != address(0), "Mosoo: token is zero address");
         require(recipient != address(0), "Mosoo: recipient is zero address");
         require(fee <= amount, "Mosoo: fee exceeds amount");
+        require(relayer != address(0) || fee == 0, "Mosoo: fee requires relayer");
         require(!nullifierHashes[nullifierHash], "Mosoo: note has already been spent");
         require(isKnownRoot(root), "Mosoo: unknown or expired Merkle root");
         require(tokenPoolBalances[token] >= amount, "Mosoo: insufficient token pool liquidity");
@@ -279,10 +300,10 @@ contract MosooPrivacyPool is MerkleTreeWithHistory {
         totalTransactionsCount++;
 
         uint256 recipientAmount = amount - fee;
-        require(IERC20(token).transfer(recipient, recipientAmount), "Mosoo: token transfer to recipient failed");
+        SafeERC20.safeTransfer(token, recipient, recipientAmount);
 
         if (fee > 0 && relayer != address(0)) {
-            require(IERC20(token).transfer(relayer, fee), "Mosoo: token fee transfer to relayer failed");
+            SafeERC20.safeTransfer(token, relayer, fee);
         }
 
         emit UnshieldToken(token, recipient, nullifierHash, relayer, fee, amount, block.timestamp);
@@ -310,6 +331,7 @@ contract MosooPrivacyPool is MerkleTreeWithHistory {
         bytes memory encryptedMemo,
         bytes calldata proof
     ) public payable whenNotPaused nonReentrant returns (uint32 newLeafIndex) {
+        require(relayer != address(0) || fee == 0, "Mosoo: fee requires relayer");
         require(!nullifierHashes[nullifierHash], "Mosoo: note has already been spent");
         require(isKnownRoot(root), "Mosoo: unknown or expired Merkle root");
         require(uint256(newCommitment) < FIELD_SIZE, "Mosoo: new commitment outside field");
@@ -332,10 +354,6 @@ contract MosooPrivacyPool is MerkleTreeWithHistory {
         return newLeafIndex;
     }
 
-    /**
-     * @notice JoinSplit 2-to-2 Multi-UTXO Private Transfer
-     * @dev Joins up to 2 input notes and splits into up to 2 output notes (payment + change)
-     */
     function transact2to2(
         bytes32 root,
         bytes32[2] calldata inputNullifiers,
@@ -345,10 +363,20 @@ contract MosooPrivacyPool is MerkleTreeWithHistory {
         bytes calldata encryptedMemo,
         bytes calldata proof
     ) external payable whenNotPaused nonReentrant returns (uint32[2] memory newLeafIndices) {
+        require(relayer != address(0) || fee == 0, "Mosoo: fee requires relayer");
         require(isKnownRoot(root), "Mosoo: unknown or expired Merkle root");
 
-        bytes32 inputsHash = keccak256(abi.encodePacked(inputNullifiers[0], inputNullifiers[1], outputCommitments[0], outputCommitments[1]));
-        require(verifyTransactProof(root, inputsHash, outputCommitments[0], relayer, fee, proof), "Mosoo: invalid 2-to-2 proof");
+        require(inputNullifiers[0] != bytes32(0) || inputNullifiers[1] != bytes32(0), "Mosoo: empty input nullifiers");
+        if (inputNullifiers[0] != bytes32(0) && inputNullifiers[1] != bytes32(0)) {
+            require(inputNullifiers[0] != inputNullifiers[1], "Mosoo: duplicate input nullifiers");
+        }
+
+        require(outputCommitments[0] != bytes32(0) || outputCommitments[1] != bytes32(0), "Mosoo: empty output commitments");
+        if (outputCommitments[0] != bytes32(0) && outputCommitments[1] != bytes32(0)) {
+            require(outputCommitments[0] != outputCommitments[1], "Mosoo: duplicate output commitments");
+        }
+
+        require(verifyTransact2to2Proof(root, inputNullifiers, outputCommitments, relayer, fee, proof), "Mosoo: invalid 2-to-2 proof");
 
         for (uint256 i = 0; i < 2; i++) {
             bytes32 nHash = inputNullifiers[i];
@@ -433,7 +461,6 @@ contract MosooPrivacyPool is MerkleTreeWithHistory {
         }
         if (v < 27) v += 27;
 
-        // EIP-2 signature malleability prevention
         if (uint256(s) > 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0) {
             return false;
         }
@@ -490,7 +517,66 @@ contract MosooPrivacyPool is MerkleTreeWithHistory {
         }
         if (v < 27) v += 27;
 
-        // EIP-2 signature malleability prevention
+        if (uint256(s) > 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0) {
+            return false;
+        }
+        if (v != 27 && v != 28) {
+            return false;
+        }
+
+        address recovered = ecrecover(ethSignedMessageHash, v, r, s);
+        return recovered != address(0) && proofAuthorizer != address(0) && recovered == proofAuthorizer;
+    }
+
+    function verifyTransact2to2Proof(
+        bytes32 root,
+        bytes32[2] calldata inputNullifiers,
+        bytes32[2] calldata outputCommitments,
+        address relayer,
+        uint256 fee,
+        bytes calldata proof
+    ) public view returns (bool) {
+        if (verifier != address(0)) {
+            if (proof.length < 256) return false;
+            (uint256[2] memory a, uint256[2][2] memory b, uint256[2] memory c) = abi.decode(proof, (uint256[2], uint256[2][2], uint256[2]));
+            uint256[] memory inputs = new uint256[](7);
+            inputs[0] = uint256(root);
+            inputs[1] = uint256(inputNullifiers[0]);
+            inputs[2] = uint256(inputNullifiers[1]);
+            inputs[3] = uint256(outputCommitments[0]);
+            inputs[4] = uint256(outputCommitments[1]);
+            inputs[5] = fee;
+            inputs[6] = uint256(uint160(relayer));
+            return IVerifier(verifier).verifyProof(a, b, c, inputs);
+        }
+
+        if (proof.length != 65) return false;
+
+        bytes32 messageHash = keccak256(
+            abi.encodePacked(
+                root,
+                inputNullifiers[0],
+                inputNullifiers[1],
+                outputCommitments[0],
+                outputCommitments[1],
+                relayer,
+                fee,
+                block.chainid,
+                address(this)
+            )
+        );
+        bytes32 ethSignedMessageHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", messageHash));
+
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+        assembly {
+            r := calldataload(proof.offset)
+            s := calldataload(add(proof.offset, 32))
+            v := byte(0, calldataload(add(proof.offset, 64)))
+        }
+        if (v < 27) v += 27;
+
         if (uint256(s) > 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0) {
             return false;
         }
@@ -527,7 +613,14 @@ contract MosooPrivacyPool is MerkleTreeWithHistory {
 
     function transferOwnership(address newOwner) external onlyOwner {
         require(newOwner != address(0), "Mosoo: new owner is zero address");
-        emit OwnershipTransferred(owner, newOwner);
-        owner = newOwner;
+        pendingOwner = newOwner;
+        emit OwnershipTransferStarted(owner, newOwner);
+    }
+
+    function acceptOwnership() external {
+        require(msg.sender == pendingOwner, "Mosoo: caller is not pending owner");
+        emit OwnershipTransferred(owner, pendingOwner);
+        owner = pendingOwner;
+        pendingOwner = address(0);
     }
 }

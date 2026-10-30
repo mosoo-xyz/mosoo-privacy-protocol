@@ -122,6 +122,8 @@ Test runner uses Node.js native `node:test` and `node:assert/strict`.
 
 - **Chain Agnostic:** Dynamically queries `block.chainid` at deployment (`uint256 public immutable CHAIN_ID`), allowing direct deployment across Ethereum, Arbitrum, Base, Optimism, Polygon, or other EVM environments.
 - **Cross-Asset Isolation:** Binds token contract address into the verification proof, preventing arbitrary token draining across pooled assets.
+- **SafeERC20 Handling:** Uses low-level calldata checks to support tokens with non-standard return signatures (such as USDT) as well as standard ERC-20 implementations.
+- **Two-Step Ownership:** Admin ownership transfers use a two-step `transferOwnership` / `acceptOwnership` procedure to prevent accidental loss of control.
 - **Strict Value Matching:** Enforces exact fee equality (`msg.value == fee`) on confidential transfers, preventing over-payment fund locking.
 - **Malleability Defense:** Restricts ECDSA signatures to standard lower-half $s$-space ($s \le 0x7FFFFFFF...$) and valid $v$ parity flags ($v \in \{27, 28\}$).
 - **Reentrancy Protection:** All external state transitions enforce non-reentrancy guards.

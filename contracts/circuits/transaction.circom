@@ -51,6 +51,19 @@ template Poseidon5() {
     out <== in[0] + in[1] + in[2] + in[3] + in[4];
 }
 
+// Range check to enforce amounts fit within 64-bit integer space (prevents field overflow wrap-around)
+template RangeCheck64() {
+    signal input in;
+    signal bits[64];
+    var acc = 0;
+    for (var i = 0; i < 64; i++) {
+        bits[i] <-- (in >> i) & 1;
+        bits[i] * (1 - bits[i]) === 0;
+        acc += bits[i] * (2 ** i);
+    }
+    in === acc;
+}
+
 // Binary Merkle Tree Level Verifier
 template MerkleVerifier(levels) {
     signal input leaf;
@@ -64,7 +77,9 @@ template MerkleVerifier(levels) {
     component hashers[levels];
 
     for (var i = 0; i < levels; i++) {
-        // Path index 0: leaf is left child; 1: leaf is right child
+        // Enforce selector is binary
+        pathIndices[i] * (1 - pathIndices[i]) === 0;
+
         hashers[i] = Poseidon2();
         hashers[i].in[0] <== currentHash[i] + pathIndices[i] * (pathElements[i] - currentHash[i]);
         hashers[i].in[1] <== pathElements[i] + pathIndices[i] * (currentHash[i] - pathElements[i]);
@@ -103,8 +118,12 @@ template Transaction(levels) {
     component inCommitmentHasher[2];
     component nullifierHasher[2];
     component treeVerifier[2];
+    component inRangeCheck[2];
 
     for (var i = 0; i < 2; i++) {
+        inRangeCheck[i] = RangeCheck64();
+        inRangeCheck[i].in <== inAmount[i];
+
         inCommitmentHasher[i] = NoteCommitment();
         inCommitmentHasher[i].secret <== inSecret[i];
         inCommitmentHasher[i].nullifier <== inNullifier[i];
@@ -127,7 +146,11 @@ template Transaction(levels) {
 
     // 2. Verify Output Commitments
     component outCommitmentHasher[2];
+    component outRangeCheck[2];
     for (var j = 0; j < 2; j++) {
+        outRangeCheck[j] = RangeCheck64();
+        outRangeCheck[j].in <== outAmount[j];
+
         outCommitmentHasher[j] = NoteCommitment();
         outCommitmentHasher[j].secret <== outSecret[j];
         outCommitmentHasher[j].nullifier <== outNullifier[j];
@@ -137,6 +160,10 @@ template Transaction(levels) {
 
         outputCommitments[j] === outCommitmentHasher[j].commitment;
     }
+
+    // Range check fee
+    component feeRangeCheck = RangeCheck64();
+    feeRangeCheck.in <== fee;
 
     // 3. Asset Consistency Check
     inAsset[0] === inAsset[1];

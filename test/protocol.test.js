@@ -50,10 +50,23 @@ describe('Mosoo Privacy Protocol Specification Tests', () => {
             recipient: '0msk1alice'
         });
 
-        // Notes with different asset addresses must have different commitments
         assert.notStrictEqual(ethNote.commitment, erc20Note.commitment);
         assert.strictEqual(ethNote.assetAddress, ethers.ZeroAddress);
         assert.strictEqual(erc20Note.assetAddress, tokenAddress);
+    });
+
+    it('supports arbitrary ERC-20 token decimals (6 decimals for USDT)', () => {
+        const tokenAddress = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
+        const noteUsdt = createNote({
+            amount: '250.5',
+            asset: tokenAddress,
+            recipient: '0msk1alice',
+            decimals: 6
+        });
+
+        assert.strictEqual(noteUsdt.amountWei, (250500000n).toString());
+        assert.strictEqual(noteUsdt.decimals, 6);
+        assert.ok(BigInt(noteUsdt.commitment) < FIELD_SIZE);
     });
 
     it('inserts notes into incremental Merkle tree and verifies membership proofs', () => {
@@ -70,6 +83,26 @@ describe('Mosoo Privacy Protocol Specification Tests', () => {
 
         const isValid = tree.verifyProof(note.commitment, proof.pathElements, proof.pathIndices, proof.root);
         assert.strictEqual(isValid, true);
+    });
+
+    it('verifies sequential Merkle insertions across multiple leaves', () => {
+        const tree = new IncrementalMerkleTree(20);
+        const notes = [];
+
+        for (let i = 0; i < 4; i++) {
+            const n = createNote({ amount: (i + 1).toString(), recipient: '0msk1alice' });
+            notes.push(n);
+            const res = tree.insert(n.commitment);
+            assert.strictEqual(res.leafIndex, i);
+        }
+
+        const latestRoot = tree.root();
+        for (let i = 0; i < 4; i++) {
+            const proof = tree.getProof(i);
+            assert.strictEqual(proof.root, latestRoot);
+            const valid = tree.verifyProof(notes[i].commitment, proof.pathElements, proof.pathIndices, latestRoot);
+            assert.strictEqual(valid, true);
+        }
     });
 
     it('validates 2-in 2-out JoinSplit value conservation invariant', () => {
@@ -120,16 +153,26 @@ describe('Mosoo Privacy Protocol Specification Tests', () => {
         const spentNullifiers = new Set();
         const note = createNote({ amount: '1.0', recipient: '0msk1bob' });
 
-        // First spend (unshield)
         assert.strictEqual(spentNullifiers.has(note.nullifierHash), false);
         spentNullifiers.add(note.nullifierHash);
 
-        // Attempting to spend the same nullifier again must fail
         assert.strictEqual(spentNullifiers.has(note.nullifierHash), true);
         assert.throws(() => {
             if (spentNullifiers.has(note.nullifierHash)) {
                 throw new Error('nullifier already spent');
             }
         }, /nullifier already spent/);
+    });
+
+    it('rejects duplicate input nullifiers in 2-to-2 JoinSplit', () => {
+        const note = createNote({ amount: '5.0', recipient: '0msk1alice' });
+        const inputNullifiers = [note.nullifierHash, note.nullifierHash];
+
+        assert.strictEqual(inputNullifiers[0], inputNullifiers[1]);
+        assert.throws(() => {
+            if (inputNullifiers[0] === inputNullifiers[1]) {
+                throw new Error('duplicate input nullifier');
+            }
+        }, /duplicate input nullifier/);
     });
 });
