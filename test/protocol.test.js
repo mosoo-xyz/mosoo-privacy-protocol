@@ -4,6 +4,10 @@ const { ethers } = require('ethers');
 const {
     deriveKeys,
     createNote,
+    serializeNote,
+    deserializeNote,
+    signUnshieldProof,
+    signTransact2to2Proof,
     encryptMemo,
     decryptMemo,
     FIELD_SIZE
@@ -174,5 +178,96 @@ describe('Mosoo Privacy Protocol Specification Tests', () => {
                 throw new Error('duplicate input nullifier');
             }
         }, /duplicate input nullifier/);
+    });
+
+    it('serializes and deserializes notes with checksum validation', () => {
+        const original = createNote({
+            amount: '3.14159',
+            asset: 'ETH',
+            recipient: '0msk1recipient'
+        });
+
+        const serialized = serializeNote(original, 1);
+        assert.ok(serialized.startsWith('mosoo-note-'));
+
+        const reconstructed = deserializeNote(serialized);
+        assert.strictEqual(reconstructed.amount, original.amount);
+        assert.strictEqual(reconstructed.assetAddress, original.assetAddress);
+        assert.strictEqual(reconstructed.secret, original.secret);
+        assert.strictEqual(reconstructed.nullifier, original.nullifier);
+        assert.strictEqual(reconstructed.commitment, original.commitment);
+        assert.strictEqual(reconstructed.nullifierHash, original.nullifierHash);
+        assert.strictEqual(reconstructed.chainId, 1);
+    });
+
+    it('detects tampering and rejects corrupted note strings', () => {
+        const original = createNote({ amount: '1.0', recipient: '0msk1alice' });
+        const serialized = serializeNote(original, 1);
+
+        // Tamper with serialized string
+        const base64Part = serialized.replace('mosoo-note-', '');
+        const decoded = Buffer.from(base64Part, 'base64url').toString('utf8');
+        const tampered = decoded.replace('1.0', '9999.0');
+        const tamperedNoteStr = `mosoo-note-${Buffer.from(tampered, 'utf8').toString('base64url')}`;
+
+        assert.throws(() => {
+            deserializeNote(tamperedNoteStr);
+        }, /checksum verification failed/);
+    });
+
+    it('supports batch Merkle insertion and index lookup', () => {
+        const tree = new IncrementalMerkleTree(20);
+        const notes = [
+            createNote({ amount: '1.0', recipient: '0msk1a' }),
+            createNote({ amount: '2.0', recipient: '0msk1b' }),
+            createNote({ amount: '3.0', recipient: '0msk1c' })
+        ];
+
+        const commitments = notes.map((n) => n.commitment);
+        const batchResults = tree.insertBatch(commitments);
+
+        assert.strictEqual(batchResults.length, 3);
+        assert.strictEqual(batchResults[0].leafIndex, 0);
+        assert.strictEqual(batchResults[1].leafIndex, 1);
+        assert.strictEqual(batchResults[2].leafIndex, 2);
+
+        assert.strictEqual(tree.indexOf(commitments[1]), 1);
+        assert.strictEqual(tree.indexOf('0xdeadbeef'), -1);
+    });
+
+    it('signs unshield proof message and verifies against authorizer address', async () => {
+        const authorizer = ethers.Wallet.createRandom();
+        const tree = new IncrementalMerkleTree(20);
+        const note = createNote({ amount: '2.0', recipient: '0msk1alice' });
+        const { root } = tree.insert(note.commitment);
+
+        const recipient = ethers.Wallet.createRandom().address;
+        const relayer = ethers.Wallet.createRandom().address;
+        const fee = ethers.parseEther('0.005');
+        const chainId = 1n;
+        const poolAddress = '0x1000000000000000000000000000000000000001';
+
+        const signature = await signUnshieldProof(authorizer, {
+            root,
+            nullifierHash: note.nullifierHash,
+            recipient,
+            relayer,
+            fee,
+            chainId,
+            poolAddress
+        });
+
+        const messageHash = ethers.keccak256(
+            ethers.solidityPacked(
+                ['bytes32', 'bytes32', 'address', 'address', 'uint256', 'uint256', 'address'],
+                [root, note.nullifierHash, recipient, relayer, fee, chainId, poolAddress]
+            )
+        );
+
+        const recovered = ethers.recoverAddress(
+            ethers.getBytes(ethers.hashMessage(ethers.getBytes(messageHash))),
+            signature
+        );
+        assert.strictEqual(recovered.toLowerCase(), authorizer.address.toLowerCase());
     });
 });

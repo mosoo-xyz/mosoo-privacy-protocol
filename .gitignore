@@ -13,10 +13,6 @@ package-lock.json
 .github_creds.json
 scripts/.github_creds.json
 
-# Azure & Cloud Deployment Scripts (contain infrastructure details)
-scripts/
-!scripts/README.md
-
 # Build / Tmp / Local Business Artifacts
 build/
 docs/

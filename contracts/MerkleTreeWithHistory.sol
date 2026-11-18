@@ -52,6 +52,7 @@ contract MerkleTreeWithHistory {
     }
 
     function _insert(bytes32 leaf) internal returns (uint32 index) {
+        require(uint256(leaf) < FIELD_SIZE, "Mosoo: leaf outside field");
         uint32 currentIndex = nextIndex;
         require(currentIndex < uint32(2) ** TREE_DEPTH, "Merkle tree is full");
 

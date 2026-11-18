@@ -131,6 +131,7 @@ contract MosooPrivacyPool is MerkleTreeWithHistory {
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event ProofAuthorizerUpdated(address indexed previousAuthorizer, address indexed newAuthorizer);
     event VerifierUpdated(address indexed previousVerifier, address indexed newVerifier);
+    event TokenRescued(address indexed token, address indexed to, uint256 amount);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Mosoo: caller is not owner");
@@ -622,5 +623,16 @@ contract MosooPrivacyPool is MerkleTreeWithHistory {
         emit OwnershipTransferred(owner, pendingOwner);
         owner = pendingOwner;
         pendingOwner = address(0);
+    }
+
+    function rescueToken(address token, address to) external onlyOwner nonReentrant {
+        require(to != address(0), "Mosoo: transfer to zero address");
+        require(token != address(0), "Mosoo: token is zero address");
+        uint256 currentBalance = IERC20(token).balanceOf(address(this));
+        uint256 trackedBalance = tokenPoolBalances[token];
+        require(currentBalance > trackedBalance, "Mosoo: no excess tokens");
+        uint256 excess = currentBalance - trackedBalance;
+        SafeERC20.safeTransfer(token, to, excess);
+        emit TokenRescued(token, to, excess);
     }
 }

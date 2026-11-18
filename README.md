@@ -74,15 +74,21 @@ Recipients discover notes by scanning on-chain event logs:
 ## Repository Layout
 
 ```text
+├── .github/
+│   └── workflows/
+│       └── ci.yml                 # Continuous integration matrix (Node 18.x, 20.x)
 ├── contracts/
-│   ├── MosooPrivacyPool.sol       # Core pool (shield, unshield, transact, transact2to2)
+│   ├── MosooPrivacyPool.sol       # Core pool (shield, unshield, transact, transact2to2, rescue)
 │   ├── MerkleTreeWithHistory.sol  # 20-depth Poseidon tree with 64-root buffer
 │   ├── MockERC20.sol              # Standard ERC-20 token for multi-asset testing
 │   └── circuits/
 │       └── transaction.circom     # Circom 2.0 2-to-2 JoinSplit circuit
 ├── lib/
-│   ├── crypto.js                  # Poseidon-BN254, key derivation, and ECDH memo engine
+│   ├── crypto.js                  # Poseidon-BN254, key derivation, memo engine, note codec
 │   └── merkle_tree.js             # Incremental Merkle tree reference implementation
+├── scripts/
+│   ├── compile.js                 # Standalone Solidity compiler and size validator
+│   └── simulate.js                # Full lifecycle protocol execution simulation
 ├── test/
 │   └── protocol.test.js           # Protocol specification test suite (node:test)
 ├── package.json
@@ -106,15 +112,43 @@ cd mosoo-privacy-protocol
 npm install
 ```
 
+### Compile Contracts
+
+Compile Solidity sources using solc and verify that bytecode size complies with the EIP-170 limit (24,576 bytes):
+
+```bash
+npm run compile
+```
+
 ### Run Specification Tests
 
-The test suite validates key derivation, note commitment bounds on BN254, 20-depth tree proofs, JoinSplit balance conservation, ECDH memo encryption/decryption, and double-spend rejection:
+The test suite validates key derivation, note commitment bounds on BN254, 20-depth tree proofs, JoinSplit balance conservation, note serialization checksums, ECDH memo encryption/decryption, and double-spend rejection:
 
 ```bash
 npm test
 ```
 
-Test runner uses Node.js native `node:test` and `node:assert/strict`.
+### Run Protocol Simulation
+
+Run an end-to-end simulation covering identity generation, note creation, Merkle insertion, encrypted memo exchange, and unshield proof validation:
+
+```bash
+npm run simulate
+```
+
+---
+
+## Note Serialization Format
+
+Notes can be serialized to a safe, transportable string for offline storage and client backups:
+
+```text
+mosoo-note-<base64url(payload:checksum)>
+```
+
+- Payload: `v1:<chainId>:<assetAddress>:<amount>:<decimals>:<secret>:<nullifier>:<recipient>`
+- Checksum: First 8 characters of `keccak256(payload)`.
+- Tampering or corruption during transfer is detected and rejected on deserialization.
 
 ---
 
@@ -122,13 +156,14 @@ Test runner uses Node.js native `node:test` and `node:assert/strict`.
 
 - **Chain Agnostic:** Dynamically queries `block.chainid` at deployment (`uint256 public immutable CHAIN_ID`), allowing direct deployment across Ethereum, Arbitrum, Base, Optimism, Polygon, or other EVM environments.
 - **Cross-Asset Isolation:** Binds token contract address into the verification proof, preventing arbitrary token draining across pooled assets.
+- **Token Rescue Invariant:** `rescueToken(address token, address to)` permits extraction of accidental non-pooled transfers while enforcing `currentBalance > tokenPoolBalances[token]`, mathematically guaranteeing pooled user balances can never be touched.
 - **SafeERC20 Handling:** Uses low-level calldata checks to support tokens with non-standard return signatures (such as USDT) as well as standard ERC-20 implementations.
 - **Two-Step Ownership:** Admin ownership transfers use a two-step `transferOwnership` / `acceptOwnership` procedure to prevent accidental loss of control.
 - **Strict Value Matching:** Enforces exact fee equality (`msg.value == fee`) on confidential transfers, preventing over-payment fund locking.
 - **Malleability Defense:** Restricts ECDSA signatures to standard lower-half $s$-space ($s \le 0x7FFFFFFF...$) and valid $v$ parity flags ($v \in \{27, 28\}$).
 - **Reentrancy Protection:** All external state transitions enforce non-reentrancy guards.
 - **State Ordering (CEI):** Nullifiers are marked spent prior to token or ether dispatches.
-- **Scalar Field Validation:** Deposits and commitments verify $\text{commitment} < p$ where $p = 21888242871839275222246405745257275088548364400416034343698204186575808495617$. Multi-nullifier batch hashes are strictly reduced modulo $p$.
+- **Scalar Field Validation:** Deposits, tree insertions, and commitments verify $\text{commitment} < p$ where $p = 21888242871839275222246405745257275088548364400416034343698204186575808495617$. Multi-nullifier batch hashes are strictly reduced modulo $p$.
 
 ---
 

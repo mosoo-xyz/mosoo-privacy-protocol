@@ -4,7 +4,9 @@
   "description": "Multi-UTXO privacy protocol on EVM using Poseidon hashing and Circom 2.0",
   "main": "lib/crypto.js",
   "scripts": {
-    "test": "node --test test/protocol.test.js"
+    "test": "node --test test/protocol.test.js",
+    "compile": "node scripts/compile.js",
+    "simulate": "node scripts/simulate.js"
   },
   "keywords": [
     "privacy-pool",
